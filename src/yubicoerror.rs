@@ -1,6 +1,6 @@
+use rusb::Error as usbError;
 use std::error;
 use std::fmt;
-use rusb::Error as usbError;
 use std::io::Error as ioError;
 
 #[derive(Debug)]
@@ -23,7 +23,7 @@ impl fmt::Display for YubicoError {
             YubicoError::DeviceNotFound => write!(f, "Device not found"),
             YubicoError::OpenDeviceError => write!(f, "Can not open device"),
             YubicoError::CommandNotSupported => write!(f, "Command Not Supported"),
-            YubicoError::WrongCRC => write!(f, "Wrong CRC"),            
+            YubicoError::WrongCRC => write!(f, "Wrong CRC"),
             YubicoError::CanNotWriteToDevice => write!(f, "Can not write to Device"),
             YubicoError::ConfigNotWritten => write!(f, "Configuration has failed"),
         }
@@ -31,10 +31,10 @@ impl fmt::Display for YubicoError {
 }
 
 impl error::Error for YubicoError {
-    fn cause(&self) -> Option<& dyn error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
-            YubicoError::UsbError(ref err) => Some(err),                    
-            _ => None
+            YubicoError::UsbError(ref err) => Some(err),
+            _ => None,
         }
     }
 }

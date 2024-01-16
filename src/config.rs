@@ -38,7 +38,7 @@ impl SyncLevel {
     }
 }
 
-impl Display for SyncLevel{
+impl Display for SyncLevel {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         write!(f, "{}", self.0)
     }

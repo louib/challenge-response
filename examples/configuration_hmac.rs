@@ -1,23 +1,26 @@
-extern crate rand;
 extern crate challenge_response;
+extern crate rand;
 
-use challenge_response::{Yubico};
-use challenge_response::config::{Config, Command};
-use challenge_response::configure::{ DeviceModeConfig };
-use challenge_response::hmacmode::{ HmacKey };
+use challenge_response::config::{Command, Config};
+use challenge_response::configure::DeviceModeConfig;
+use challenge_response::hmacmode::HmacKey;
+use challenge_response::Yubico;
+use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
-use rand::distributions::{Alphanumeric};
 
 fn main() {
-   let mut yubi = Yubico::new();
+    let mut yubi = Yubico::new();
 
-   if let Ok(device) = yubi.find_yubikey() {
-       println!("Vendor ID: {:?} Product ID {:?}", device.vendor_id, device.product_id);
+    if let Ok(device) = yubi.find_yubikey() {
+        println!(
+            "Vendor ID: {:?} Product ID {:?}",
+            device.vendor_id, device.product_id
+        );
 
-       let config = Config::default()
-           .set_vendor_id(device.vendor_id)
-           .set_product_id(device.product_id)
-           .set_command(Command::Configuration2);
+        let config = Config::default()
+            .set_vendor_id(device.vendor_id)
+            .set_product_id(device.product_id)
+            .set_command(Command::Configuration2);
 
         let rng = thread_rng();
 
@@ -36,8 +39,7 @@ fn main() {
         } else {
             println!("Device configured");
         }
-     
-   } else {
-       println!("Yubikey not found");
-   }
+    } else {
+        println!("Yubikey not found");
+    }
 }

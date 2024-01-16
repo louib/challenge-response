@@ -1,9 +1,9 @@
-use std;
+use config::Command;
 use hmacmode::HmacKey;
+use manager::Frame;
 use otpmode::Aes128Key;
 use sec::crc16;
-use manager::Frame;
-use config::Command;
+use std;
 
 const FIXED_SIZE: usize = 16;
 const UID_SIZE: usize = 6;
@@ -46,7 +46,6 @@ impl std::default::Default for DeviceModeConfig {
 const SIZEOF_CONFIG: usize = 52;
 
 impl DeviceModeConfig {
-
     #[doc(hidden)]
     pub fn to_frame(&mut self, command: Command) -> Frame {
         let mut payload = [0; 64];
@@ -59,9 +58,8 @@ impl DeviceModeConfig {
         };
 
         // Then write to the payload.
-        let s = unsafe {
-            std::slice::from_raw_parts(self as *const DeviceModeConfig as *const u8, SIZEOF_CONFIG)
-        };
+        let s =
+            unsafe { std::slice::from_raw_parts(self as *const DeviceModeConfig as *const u8, SIZEOF_CONFIG) };
         (&mut payload[..SIZEOF_CONFIG]).clone_from_slice(s);
 
         Frame::new(payload, command)
@@ -77,7 +75,11 @@ impl DeviceModeConfig {
         self.ext_flags = ExtendedFlags::empty();
 
         self.tkt_flags.insert(TicketFlags::CHAL_RESP);
-        self.cfg_flags.insert(if button_press { ConfigFlags::CHAL_HMAC | ConfigFlags::CHAL_BTN_TRIG } else { ConfigFlags::CHAL_HMAC });
+        self.cfg_flags.insert(if button_press {
+            ConfigFlags::CHAL_HMAC | ConfigFlags::CHAL_BTN_TRIG
+        } else {
+            ConfigFlags::CHAL_HMAC
+        });
         if variable {
             self.cfg_flags.insert(ConfigFlags::HMAC_LT64)
         } else {
@@ -89,13 +91,17 @@ impl DeviceModeConfig {
     }
 
     /// Sets the configuration in challenge-response, OTP mode.
-    pub fn challenge_response_otp(&mut self, secret: &Aes128Key, priv_id: &[u8;6], button_press: bool) {
+    pub fn challenge_response_otp(&mut self, secret: &Aes128Key, priv_id: &[u8; 6], button_press: bool) {
         self.tkt_flags = TicketFlags::empty();
         self.cfg_flags = ConfigFlags::empty();
         self.ext_flags = ExtendedFlags::empty();
 
         self.tkt_flags.insert(TicketFlags::CHAL_RESP);
-        self.cfg_flags.insert(if button_press { ConfigFlags::CHAL_YUBICO | ConfigFlags::CHAL_BTN_TRIG } else { ConfigFlags::CHAL_YUBICO });
+        self.cfg_flags.insert(if button_press {
+            ConfigFlags::CHAL_YUBICO | ConfigFlags::CHAL_BTN_TRIG
+        } else {
+            ConfigFlags::CHAL_YUBICO
+        });
 
         self.uid.copy_from_slice(priv_id);
         self.key.copy_from_slice(&secret.0);

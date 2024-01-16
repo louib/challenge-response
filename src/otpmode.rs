@@ -1,9 +1,9 @@
-use std;
-use rand::Rng;
-use aes::{Aes128, BlockDecrypt};
-use aes::cipher::{generic_array::GenericArray,NewBlockCipher};
 use aes::cipher::generic_array::typenum::U16;
-use sec::{CRC_RESIDUAL_OK, crc16};
+use aes::cipher::{generic_array::GenericArray, NewBlockCipher};
+use aes::{Aes128, BlockDecrypt};
+use rand::Rng;
+use sec::{crc16, CRC_RESIDUAL_OK};
+use std;
 use yubicoerror::YubicoError;
 
 #[repr(C)]
@@ -42,7 +42,7 @@ impl Aes128Key {
         key
     }
 
-    pub fn generate<R:Rng>(mut rng: R) -> Self {
+    pub fn generate<R: Rng>(mut rng: R) -> Self {
         let mut key = Aes128Key([0; 16]);
         for i in key.0.iter_mut() {
             *i = rng.gen()
@@ -77,12 +77,10 @@ impl Aes128Block {
     /// id, and that the `(use_counter, session_counter)` is strictly
     /// larger than the last value seen.
     pub fn check(&self, key: &Aes128Key, challenge: &[u8]) -> Result<Otp, YubicoError> {
-
         let aes_dec = Aes128::new(GenericArray::from_slice(&key.0));
         let mut tmp = Otp::default();
         {
-            let tmp =
-                unsafe { std::slice::from_raw_parts_mut(&mut tmp as *mut Otp as *mut u8, 16) };
+            let tmp = unsafe { std::slice::from_raw_parts_mut(&mut tmp as *mut Otp as *mut u8, 16) };
             let mut block_copy = &mut self.block.clone();
             aes_dec.decrypt_block(&mut block_copy);
             tmp.copy_from_slice(block_copy);

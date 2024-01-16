@@ -1,6 +1,6 @@
-use sha1::{Sha1};
 use hmac::{Hmac, Mac, NewMac};
 use hmacmode::HmacKey;
+use sha1::Sha1;
 
 const PRESET_VALUE: u16 = 0xFFFF;
 const POLYNOMIAL: u16 = 0x8408;
