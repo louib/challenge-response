@@ -10,6 +10,12 @@ categories = ["authentication"]
 repository = "https://github.com/louib/challenge-response"
 readme = "README.md"
 
+include = [
+  "src/",
+  "README.md",
+  "LICENSE",
+]
+
 [lib]
 name = "challenge_response"
 path = "src/lib.rs"
