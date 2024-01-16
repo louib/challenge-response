@@ -7,14 +7,11 @@ description = "Yubikey Challenge-Response & Configuration"
 license = "MIT OR Apache-2.0"
 keywords = ["yubikey", "authentication", "encryption", "configuration", "Challenge-Response"]
 categories = ["authentication"]
-repository = "https://github.com/wisespace-io/yubico-manager"
+repository = "https://github.com/louib/challenge-response"
 readme = "README.md"
 
-[badges]
-travis-ci = { repository = "wisespace-io/yubico-manager" }
-
 [lib]
-name = "yubico_manager"
+name = "challenge_response"
 path = "src/lib.rs"
 
 [dependencies]
