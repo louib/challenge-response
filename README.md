@@ -22,7 +22,7 @@ Add this to your Cargo.toml
 
 ```toml
 [dependencies]
-yubico_manager = "0.9"
+challenge_response = "0"
 ```
 
 ### Configure Yubikey (HMAC-SHA1 mode)

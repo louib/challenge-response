@@ -1,6 +1,6 @@
 [package]
 name = "yubico_manager"
-version = "0.9.0"
+version = "0.0.1"
 authors = ["Flavio Oliveira <flavio@wisespace.io>", "Pierre-Étienne Meunier <pe@coturnix.fr>"]
 
 description = "Yubikey Challenge-Response & Configuration"
