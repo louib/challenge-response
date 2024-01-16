@@ -1,4 +1,4 @@
-# Yubico Manager &emsp; [![Build Status]][travis] [![Latest Version]][crates.io] [![MIT licensed]][MIT] [![Apache-2.0 licensed]][APACHE]
+# challenge-response [![Latest Version]][crates.io] [![MIT licensed]][MIT] [![Apache-2.0 licensed]][APACHE]
 
 [Latest Version]: https://img.shields.io/crates/v/challenge-response.svg
 [crates.io]: https://crates.io/crates/challenge-response
@@ -7,7 +7,7 @@
 [Apache-2.0 licensed]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
 [APACHE]: ./LICENSE-APACHE
 
-**Yubikey Challenge-Response & Configuration.**
+**Challenge-Response library for Rust**
 
 ---
 
