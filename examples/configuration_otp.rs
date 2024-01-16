@@ -1,27 +1,30 @@
 extern crate challenge_response;
 
-use challenge_response::{Yubico};
-use challenge_response::configure::{ DeviceModeConfig };
-use challenge_response::otpmode::{ Aes128Key };
-use challenge_response::config::{Config, Command};
+use challenge_response::config::{Command, Config};
+use challenge_response::configure::DeviceModeConfig;
+use challenge_response::otpmode::Aes128Key;
+use challenge_response::Yubico;
 
 fn main() {
-   let mut yubi = Yubico::new();
+    let mut yubi = Yubico::new();
 
-   if let Ok(device) = yubi.find_yubikey() {
-       println!("Vendor ID: {:?} Product ID {:?}", device.vendor_id, device.product_id);
+    if let Ok(device) = yubi.find_yubikey() {
+        println!(
+            "Vendor ID: {:?} Product ID {:?}",
+            device.vendor_id, device.product_id
+        );
 
-       let config = Config::default()
-           .set_vendor_id(device.vendor_id)
-           .set_product_id(device.product_id)
-           .set_command(Command::Configuration2);
+        let config = Config::default()
+            .set_vendor_id(device.vendor_id)
+            .set_product_id(device.product_id)
+            .set_command(Command::Configuration2);
 
         let require_press_button = false;
 
         // Private Identity must have 6 bytes (input parameter in the OTP generation algorithm)
         let private_identity: &[u8; 6] = b"norway";
-        
-        // Secret must have 16 bytes        
+
+        // Secret must have 16 bytes
         let secret: &[u8; 16] = b"_awesome_secret_";
         let aes128_key: Aes128Key = Aes128Key::from_slice(secret);
 
@@ -33,8 +36,7 @@ fn main() {
         } else {
             println!("Device configured");
         }
-     
-   } else {
-       println!("Yubikey not found");
-   }
+    } else {
+        println!("Yubikey not found");
+    }
 }

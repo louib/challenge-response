@@ -1,6 +1,6 @@
-use std;
 use rand::Rng;
 use sec::hmac_sha1;
+use std;
 
 #[derive(Debug)]
 pub struct Hmac(pub [u8; 20]);
@@ -43,7 +43,7 @@ impl HmacKey {
         key
     }
 
-    pub fn generate<R:Rng>(mut rng: R) -> Self {
+    pub fn generate<R: Rng>(mut rng: R) -> Self {
         let mut key = HmacKey([0; 20]);
         for i in key.0.iter_mut() {
             *i = rng.gen()

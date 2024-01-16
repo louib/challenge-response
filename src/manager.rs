@@ -1,9 +1,9 @@
 use config::Command;
+use rusb::{request_type, Context, DeviceHandle, Direction, Recipient, RequestType, UsbContext};
+use sec::crc16;
 use std::time::Duration;
-use std::{thread, slice};
-use sec::{crc16};
+use std::{slice, thread};
 use yubicoerror::YubicoError;
-use rusb::{request_type, Direction, RequestType, Recipient, Context, DeviceHandle, UsbContext};
 
 const DATA_SIZE: usize = 64;
 const HID_GET_REPORT: u8 = 0x01;
@@ -42,7 +42,7 @@ pub fn open_device(
                 Ok(mut handle) => {
                     let config = match device.config_descriptor(0) {
                         Ok(c) => c,
-                        Err(_) => continue
+                        Err(_) => continue,
                     };
 
                     let mut interfaces = Vec::new();
@@ -52,8 +52,8 @@ pub fn open_device(
                                 Ok(true) => {
                                     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
                                     handle.detach_kernel_driver(usb_int.interface_number())?;
-                                },
-                                _ => continue
+                                }
+                                _ => continue,
                             };
 
                             if handle.active_configuration()? != config.number() {
@@ -66,8 +66,8 @@ pub fn open_device(
                         }
                     }
 
-                    return Ok((handle, interfaces))
-                },
+                    return Ok((handle, interfaces));
+                }
                 Err(_) => {
                     return Err(YubicoError::OpenDeviceError);
                 }
@@ -79,10 +79,7 @@ pub fn open_device(
 }
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
-pub fn close_device(
-    _handle: DeviceHandle<Context>,
-    _interfaces: Vec<u8>,
-) -> Result<(), YubicoError> {
+pub fn close_device(_handle: DeviceHandle<Context>, _interfaces: Vec<u8>) -> Result<(), YubicoError> {
     Ok(())
 }
 
@@ -95,7 +92,11 @@ pub fn close_device(mut handle: DeviceHandle<Context>, interfaces: Vec<u8>) -> R
     Ok(())
 }
 
-pub fn wait<F: Fn(Flags) -> bool>(handle: &mut DeviceHandle<Context>, f: F, buf: &mut [u8]) -> Result<(), YubicoError>  {
+pub fn wait<F: Fn(Flags) -> bool>(
+    handle: &mut DeviceHandle<Context>,
+    f: F,
+    buf: &mut [u8],
+) -> Result<(), YubicoError> {
     loop {
         read(handle, buf)?;
         let flags = Flags::from_bits_truncate(buf[7]);
@@ -118,9 +119,7 @@ pub fn read(handle: &mut DeviceHandle<Context>, buf: &mut [u8]) -> Result<usize,
 }
 
 pub fn write_frame(handle: &mut DeviceHandle<Context>, frame: &Frame) -> Result<(), YubicoError> {
-    let mut data = unsafe {
-        slice::from_raw_parts(frame as *const Frame as *const u8, 70)
-    };
+    let mut data = unsafe { slice::from_raw_parts(frame as *const Frame as *const u8, 70) };
 
     let mut seq = 0;
     let mut buf = [0; 8];
@@ -129,7 +128,7 @@ pub fn write_frame(handle: &mut DeviceHandle<Context>, frame: &Frame) -> Result<
 
         if seq == 0 || b.is_empty() || a.iter().any(|&x| x != 0) {
             let mut packet = [0; 8];
-            (&mut packet[ .. 7 ]).copy_from_slice(a);
+            (&mut packet[..7]).copy_from_slice(a);
 
             packet[7] = Flags::SLOT_WRITE_FLAG.bits() + seq;
             wait(handle, |x| !x.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
@@ -159,9 +158,13 @@ pub fn write_reset(handle: &mut DeviceHandle<Context>) -> Result<(), YubicoError
     Ok(())
 }
 
-pub fn read_response(handle: &mut DeviceHandle<Context>, response:&mut [u8]) -> Result<usize, YubicoError> {
+pub fn read_response(handle: &mut DeviceHandle<Context>, response: &mut [u8]) -> Result<usize, YubicoError> {
     let mut r0 = 0;
-    wait(handle, |f| {f.contains(Flags::RESP_PENDING_FLAG)}, &mut response[.. 8])?;
+    wait(
+        handle,
+        |f| f.contains(Flags::RESP_PENDING_FLAG),
+        &mut response[..8],
+    )?;
     r0 += 7;
     loop {
         if read(handle, &mut response[r0..r0 + 8])? < 8 {
@@ -203,5 +206,5 @@ impl Frame {
         };
         f.crc = crc16(&f.payload).to_le();
         f
-    }    
+    }
 }
