@@ -1,9 +1,9 @@
 [package]
-name = "yubico_manager"
+name = "challenge_response"
 version = "0.0.1"
-authors = ["Flavio Oliveira <flavio@wisespace.io>", "Pierre-Étienne Meunier <pe@coturnix.fr>"]
+authors = ["Ashutosh Varma <github@ashu.io>", "louib <code@louib.net>"]
 
-description = "Yubikey Challenge-Response & Configuration"
+description = "Challenge-Response library for Rust"
 license = "MIT OR Apache-2.0"
 keywords = ["yubikey", "authentication", "encryption", "configuration", "Challenge-Response"]
 categories = ["authentication"]

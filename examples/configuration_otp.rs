@@ -1,9 +1,9 @@
-extern crate yubico_manager;
+extern crate challenge_response;
 
-use yubico_manager::{Yubico};
-use yubico_manager::configure::{ DeviceModeConfig };
-use yubico_manager::otpmode::{ Aes128Key };
-use yubico_manager::config::{Config, Command};
+use challenge_response::{Yubico};
+use challenge_response::configure::{ DeviceModeConfig };
+use challenge_response::otpmode::{ Aes128Key };
+use challenge_response::config::{Config, Command};
 
 fn main() {
    let mut yubi = Yubico::new();

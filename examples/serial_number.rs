@@ -1,8 +1,8 @@
 extern crate hex;
-extern crate yubico_manager;
+extern crate challenge_response;
 
-use yubico_manager::{Yubico};
-use yubico_manager::config::{Config, Slot};
+use challenge_response::{Yubico};
+use challenge_response::config::{Config, Slot};
 
 fn main() {
    let mut yubi = Yubico::new();

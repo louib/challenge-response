@@ -32,12 +32,12 @@ Alternatively you can configure the yubikey with the official [Yubikey Personali
 
 ```rust
 extern crate rand;
-extern crate yubico_manager;
+extern crate challenge_response;
 
-use yubico_manager::{Yubico};
-use yubico_manager::config::{Config, Command};
-use yubico_manager::configure::{ DeviceModeConfig };
-use yubico_manager::hmacmode::{ HmacKey };
+use challenge_response::{Yubico};
+use challenge_response::config::{Config, Command};
+use challenge_response::configure::{ DeviceModeConfig };
+use challenge_response::hmacmode::{ HmacKey };
 use rand::{thread_rng, Rng};
 use rand::distributions::{Alphanumeric};
 
@@ -80,11 +80,11 @@ Configure the yubikey with [Yubikey Personalization GUI](https://developers.yubi
 
 ```rust
 extern crate hex;
-extern crate yubico_manager;
+extern crate challenge_response;
 
 use std::ops::Deref;
-use yubico_manager::{Yubico};
-use yubico_manager::config::{Config, Slot, Mode};
+use challenge_response::{Yubico};
+use challenge_response::config::{Config, Slot, Mode};
 
 fn main() {
    let mut yubi = Yubico::new();

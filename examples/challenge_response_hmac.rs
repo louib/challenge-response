@@ -1,9 +1,9 @@
 extern crate hex;
-extern crate yubico_manager;
+extern crate challenge_response;
 
 use std::ops::Deref;
-use yubico_manager::{Yubico};
-use yubico_manager::config::{Config, Slot, Mode};
+use challenge_response::{Yubico};
+use challenge_response::config::{Config, Slot, Mode};
 
 fn main() {
    let mut yubi = Yubico::new();
