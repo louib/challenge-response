@@ -1,5 +1,7 @@
-# challenge-response [![Latest Version]][crates.io] [![MIT licensed]][MIT] [![Apache-2.0 licensed]][APACHE]
+# challenge-response [![Latest Version]][crates.io] [![Documentation]][docs.rs] [![MIT licensed]][MIT] [![Apache-2.0 licensed]][APACHE]
 
+[Documentation]: https://docs.rs/challenge_response/badge.svg
+[docs.rs]: https://docs.rs/challenge-response/
 [Latest Version]: https://img.shields.io/crates/v/challenge-response.svg
 [crates.io]: https://crates.io/crates/challenge-response
 [MIT licensed]: https://img.shields.io/badge/License-MIT-blue.svg
