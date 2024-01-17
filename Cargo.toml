@@ -1,6 +1,6 @@
 [package]
 name = "challenge_response"
-version = "0.0.1"
+version = "0.0.0-placeholder-version"
 authors = ["Ashutosh Varma <github@ashu.io>", "louib <code@louib.net>"]
 
 description = "Challenge-Response library for Rust"
