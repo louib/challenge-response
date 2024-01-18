@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::Yubikey;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Slot {
     Slot1,
@@ -88,8 +90,7 @@ pub enum Command {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Config {
-    pub product_id: u16,
-    pub vendor_id: u16,
+    pub yubikey: Yubikey,
     pub variable: bool,
     pub slot: Slot,
     pub mode: Mode,
@@ -98,25 +99,14 @@ pub struct Config {
 
 #[allow(dead_code)]
 impl Config {
-    pub fn default() -> Config {
+    pub fn new_from(yubikey: Yubikey) -> Config {
         Config {
-            product_id: 0x00,
-            vendor_id: 0x1050,
+            yubikey: yubikey,
             variable: true,
-            slot: Slot::Slot1,
+            slot: Slot::Slot2,
             mode: Mode::Sha1,
-            command: Command::ChallengeHmac1,
+            command: Command::ChallengeHmac2,
         }
-    }
-
-    pub fn set_vendor_id(mut self, vendor_id: u16) -> Self {
-        self.vendor_id = vendor_id;
-        self
-    }
-
-    pub fn set_product_id(mut self, product_id: u16) -> Self {
-        self.product_id = product_id;
-        self
     }
 
     pub fn set_variable_size(mut self, variable: bool) -> Self {
