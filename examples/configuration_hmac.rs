@@ -4,14 +4,14 @@ extern crate rand;
 use challenge_response::config::{Command, Config};
 use challenge_response::configure::DeviceModeConfig;
 use challenge_response::hmacmode::HmacKey;
-use challenge_response::Yubico;
+use challenge_response::ChallengeResponse;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
 fn main() {
-    let mut yubi = Yubico::new();
+    let mut yubi = ChallengeResponse::new();
 
-    if let Ok(device) = yubi.find_yubikey() {
+    if let Ok(device) = yubi.find_device() {
         println!(
             "Vendor ID: {:?} Product ID {:?}",
             device.vendor_id, device.product_id

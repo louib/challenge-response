@@ -11,16 +11,17 @@ extern crate sha1;
 #[macro_use]
 extern crate bitflags;
 
+pub mod challengeresponseerror;
 pub mod config;
 pub mod configure;
 pub mod hmacmode;
 mod manager;
 pub mod otpmode;
 pub mod sec;
-pub mod yubicoerror;
 
 use aes::cipher::generic_array::GenericArray;
 
+use challengeresponseerror::ChallengeResponseError;
 use config::Command;
 use config::{Config, Slot};
 use configure::DeviceModeConfig;
@@ -29,15 +30,25 @@ use manager::{Flags, Frame};
 use otpmode::Aes128Block;
 use rusb::{Context, UsbContext};
 use sec::{crc16, CRC_RESIDUAL_OK};
-use yubicoerror::YubicoError;
 
-const VENDOR_ID: u16 = 0x1050;
+const VENDOR_ID: [u16; 3] = [
+    0x1050, // Yubico ( Yubikeys )
+    0x1D50, // OpenMoko ( Onlykey )
+    0x20A0, // Flirc ( Nitrokey )
+];
+const PRODUCT_ID: [u16; 11] = [
+    0x0010, // YubiKey Gen 1 & 2
+    0x0110, 0x0113, 0x0114, 0x0116, // YubiKey NEO
+    0x0401, 0x0403, 0x0405, 0x0407, // Yubikey 4 & 5
+    0x60FC, // Onlykey
+    0x4211, // NitroKey
+];
 
 /// The `Result` type used in this crate.
-type Result<T> = ::std::result::Result<T, YubicoError>;
+type Result<T> = ::std::result::Result<T, ChallengeResponseError>;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Yubikey {
+pub struct Device {
     pub name: Option<String>,
     pub serial: Option<u32>,
     pub product_id: u16,
@@ -46,14 +57,14 @@ pub struct Yubikey {
     pub address_id: u8,
 }
 
-pub struct Yubico {
+pub struct ChallengeResponse {
     context: Context,
 }
 
-impl Yubico {
+impl ChallengeResponse {
     /// Creates a new Yubico instance.
     pub fn new() -> Self {
-        Yubico {
+        ChallengeResponse {
             context: Context::new().unwrap(),
         }
     }
@@ -77,7 +88,7 @@ impl Yubico {
 
         // Check response.
         if crc16(&response[..6]) != crate::sec::CRC_RESIDUAL_OK {
-            return Err(YubicoError::WrongCRC);
+            return Err(ChallengeResponseError::WrongCRC);
         }
 
         let serial = structure!("2I").unpack(response[..8].to_vec())?;
@@ -85,13 +96,13 @@ impl Yubico {
         Ok(serial.0)
     }
 
-    pub fn find_yubikey(&mut self) -> Result<Yubikey> {
+    pub fn find_device(&mut self) -> Result<Device> {
         for device in self.context.devices().unwrap().iter() {
             let descr = device.device_descriptor().unwrap();
-            if descr.vendor_id() == VENDOR_ID {
+            if VENDOR_ID.contains(&descr.vendor_id()) && PRODUCT_ID.contains(&descr.product_id()) {
                 let name = device.open()?.read_product_string_ascii(&descr).ok();
                 let serial = self.read_serial_from_device(device.clone()).ok();
-                let yubikey = Yubikey {
+                let yubikey = Device {
                     name: name,
                     serial: serial,
                     product_id: descr.product_id(),
@@ -104,20 +115,20 @@ impl Yubico {
             }
         }
 
-        Err(YubicoError::DeviceNotFound)
+        Err(ChallengeResponseError::DeviceNotFound)
     }
 
-    pub fn find_yubikey_from_serial(&mut self, serial: u32) -> Result<Yubikey> {
+    pub fn find_device_from_serial(&mut self, serial: u32) -> Result<Device> {
         for device in self.context.devices().unwrap().iter() {
             let descr = device.device_descriptor().unwrap();
-            if descr.vendor_id() == VENDOR_ID {
+            if VENDOR_ID.contains(&descr.vendor_id()) && PRODUCT_ID.contains(&descr.product_id()) {
                 let name = device.open()?.read_product_string_ascii(&descr).ok();
                 let fetched_serial = match self.read_serial_from_device(device.clone()).ok() {
                     Some(s) => s,
                     None => 0,
                 };
                 if serial == fetched_serial {
-                    let yubikey = Yubikey {
+                    let yubikey = Device {
                         name: name,
                         serial: Some(serial),
                         product_id: descr.product_id(),
@@ -131,17 +142,17 @@ impl Yubico {
             }
         }
 
-        Err(YubicoError::DeviceNotFound)
+        Err(ChallengeResponseError::DeviceNotFound)
     }
 
-    pub fn find_all_yubikeys(&mut self) -> Result<Vec<Yubikey>> {
-        let mut result: Vec<Yubikey> = Vec::new();
+    pub fn find_all_devices(&mut self) -> Result<Vec<Device>> {
+        let mut result: Vec<Device> = Vec::new();
         for device in self.context.devices().unwrap().iter() {
             let descr = device.device_descriptor().unwrap();
-            if descr.vendor_id() == VENDOR_ID {
+            if VENDOR_ID.contains(&descr.vendor_id()) && PRODUCT_ID.contains(&descr.product_id()) {
                 let name = device.open()?.read_product_string_ascii(&descr).ok();
                 let serial = self.read_serial_from_device(device.clone()).ok();
-                let yubikey = Yubikey {
+                let yubikey = Device {
                     name: name,
                     serial: serial,
                     product_id: descr.product_id(),
@@ -157,14 +168,14 @@ impl Yubico {
             return Ok(result);
         }
 
-        Err(YubicoError::DeviceNotFound)
+        Err(ChallengeResponseError::DeviceNotFound)
     }
 
     pub fn write_config(&mut self, conf: Config, device_config: &mut DeviceModeConfig) -> Result<()> {
         let d = device_config.to_frame(conf.command);
         let mut buf = [0; 8];
 
-        match manager::open_device(&mut self.context, conf.yubikey.bus_id, conf.yubikey.address_id) {
+        match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
             Ok((mut handle, interfaces)) => {
                 manager::wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
 
@@ -181,7 +192,7 @@ impl Yubico {
     }
 
     pub fn read_serial_number(&mut self, conf: Config) -> Result<u32> {
-        match manager::open_device(&mut self.context, conf.yubikey.bus_id, conf.yubikey.address_id) {
+        match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
             Ok((mut handle, interfaces)) => {
                 let challenge = [0; 64];
                 let command = Command::DeviceSerial;
@@ -203,7 +214,7 @@ impl Yubico {
 
                 // Check response.
                 if crc16(&response[..6]) != CRC_RESIDUAL_OK {
-                    return Err(YubicoError::WrongCRC);
+                    return Err(ChallengeResponseError::WrongCRC);
                 }
 
                 let serial = structure!("2I").unpack(response[..8].to_vec())?;
@@ -217,7 +228,7 @@ impl Yubico {
     pub fn challenge_response_hmac(&mut self, chall: &[u8], conf: Config) -> Result<Hmac> {
         let mut hmac = Hmac([0; 20]);
 
-        match manager::open_device(&mut self.context, conf.yubikey.bus_id, conf.yubikey.address_id) {
+        match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
             Ok((mut handle, interfaces)) => {
                 let mut challenge = [0; 64];
 
@@ -248,7 +259,7 @@ impl Yubico {
 
                 // Check response.
                 if crc16(&response[..22]) != CRC_RESIDUAL_OK {
-                    return Err(YubicoError::WrongCRC);
+                    return Err(ChallengeResponseError::WrongCRC);
                 }
 
                 hmac.0.clone_from_slice(&response[..20]);
@@ -264,7 +275,7 @@ impl Yubico {
             block: GenericArray::clone_from_slice(&[0; 16]),
         };
 
-        match manager::open_device(&mut self.context, conf.yubikey.bus_id, conf.yubikey.address_id) {
+        match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
             Ok((mut handle, interfaces)) => {
                 let mut challenge = [0; 64];
                 //(&mut challenge[..6]).copy_from_slice(chall);
@@ -290,7 +301,7 @@ impl Yubico {
 
                 // Check response.
                 if crc16(&response[..18]) != CRC_RESIDUAL_OK {
-                    return Err(YubicoError::WrongCRC);
+                    return Err(ChallengeResponseError::WrongCRC);
                 }
 
                 block.block.copy_from_slice(&response[..16]);

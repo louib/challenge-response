@@ -2,12 +2,12 @@ extern crate challenge_response;
 extern crate hex;
 
 use challenge_response::config::{Config, Mode, Slot};
-use challenge_response::Yubico;
+use challenge_response::ChallengeResponse;
 
 fn main() {
-    let mut yubi = Yubico::new();
+    let mut yubi = ChallengeResponse::new();
 
-    if let Ok(device) = yubi.find_yubikey() {
+    if let Ok(device) = yubi.find_device() {
         println!(
             "Vendor ID: {:?} Product ID {:?}",
             device.vendor_id, device.product_id
