@@ -6,6 +6,32 @@ pub enum Slot {
     Slot2,
 }
 
+impl Slot {
+    /// Parses a slot number from a slice.
+    /// Returns None if the slot number is invalid.
+    pub fn from_str(slot_number: &str) -> Option<Slot> {
+        if slot_number == "1" {
+            return Some(Slot::Slot1);
+        }
+        if slot_number == "2" {
+            return Some(Slot::Slot2);
+        }
+        None
+    }
+
+    /// Parses a slot number from an integer.
+    /// Returns None if the slot number is invalid.
+    pub fn from_int(slot_number: usize) -> Option<Slot> {
+        if slot_number == 1 {
+            return Some(Slot::Slot1);
+        }
+        if slot_number == 2 {
+            return Some(Slot::Slot2);
+        }
+        None
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Mode {
     Sha1,
