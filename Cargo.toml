@@ -21,15 +21,14 @@ name = "challenge_response"
 path = "src/lib.rs"
 
 [dependencies]
-rand = "0.8.4"
-bitflags = "1.2"
-rusb = "0.9.3"
+rand = "0.8"
+bitflags = "2.4"
+rusb = "0.9"
 structure = "0.1"
-
-aes = "0.7.4"
-block-modes = "0.8.1"
-hmac = "0.11.0"
-sha-1 = "0.9"
+aes = "0.8"
+block-modes = "0.9"
+hmac = "0.12"
+sha-1 = "0.10"
 
 [dev-dependencies]
-hex = "0.3.2"
+hex = "0.4"
