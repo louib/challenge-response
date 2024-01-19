@@ -1,4 +1,6 @@
-# challenge-response [![Latest Version]][crates.io] [![Documentation]][docs.rs] [![MIT licensed]][MIT] [![Apache-2.0 licensed]][APACHE]
+# challenge-response
+
+[![Latest Version]][crates.io] [![Documentation]][docs.rs] [![Dependency Status]][deps.rs] [![MIT licensed]][MIT] [![Apache-2.0 licensed]][APACHE]
 
 [Documentation]: https://docs.rs/challenge_response/badge.svg
 [docs.rs]: https://docs.rs/challenge-response/
@@ -8,6 +10,8 @@
 [MIT]: ./LICENSE-MIT
 [Apache-2.0 licensed]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
 [APACHE]: ./LICENSE-APACHE
+[Dependency Status]: https://deps.rs/repo/github/louib/challenge-response/status.svg
+[deps.rs]: https://deps.rs/repo/github/louib/challenge-response
 
 **Challenge-Response library for Rust**
 
