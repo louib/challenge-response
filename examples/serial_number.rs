@@ -13,10 +13,7 @@ fn main() {
             device.vendor_id, device.product_id
         );
 
-        let config = Config::default()
-            .set_vendor_id(device.vendor_id)
-            .set_product_id(device.product_id)
-            .set_slot(Slot::Slot2);
+        let config = Config::new_from(device).set_slot(Slot::Slot2);
 
         match yubi.read_serial_number(config) {
             Ok(serial_number) => {

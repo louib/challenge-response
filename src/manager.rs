@@ -19,8 +19,8 @@ bitflags! {
 
 pub fn open_device(
     context: &mut Context,
-    vid: u16,
-    pid: u16,
+    bus_id: u8,
+    address_id: u8,
 ) -> Result<(DeviceHandle<Context>, Vec<u8>), YubicoError> {
     let devices = match context.devices() {
         Ok(device) => device,
@@ -30,14 +30,14 @@ pub fn open_device(
     };
 
     for device in devices.iter() {
-        let device_desc = match device.device_descriptor() {
-            Ok(device) => device,
+        match device.device_descriptor() {
+            Ok(_) => {}
             Err(_) => {
                 return Err(YubicoError::DeviceNotFound);
             }
         };
 
-        if device_desc.vendor_id() == vid && device_desc.product_id() == pid {
+        if device.bus_number() == bus_id && device.address() == address_id {
             match device.open() {
                 Ok(mut handle) => {
                     let config = match device.config_descriptor(0) {
@@ -45,7 +45,7 @@ pub fn open_device(
                         Err(_) => continue,
                     };
 
-                    let mut interfaces = Vec::new();
+                    let mut _interfaces = Vec::new();
                     for interface in config.interfaces() {
                         for usb_int in interface.descriptors() {
                             match handle.kernel_driver_active(usb_int.interface_number()) {
@@ -62,11 +62,11 @@ pub fn open_device(
                             #[cfg(not(any(target_os = "macos", target_os = "windows")))]
                             handle.claim_interface(usb_int.interface_number())?;
                             #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-                            interfaces.push(usb_int.interface_number());
+                            _interfaces.push(usb_int.interface_number());
                         }
                     }
 
-                    return Ok((handle, interfaces));
+                    return Ok((handle, _interfaces));
                 }
                 Err(_) => {
                     return Err(YubicoError::OpenDeviceError);
