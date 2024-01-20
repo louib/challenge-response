@@ -1,10 +1,11 @@
+use crate::sec::{crc16, CRC_RESIDUAL_OK};
+use crate::yubicoerror::YubicoError;
 use aes::cipher::generic_array::typenum::U16;
-use aes::cipher::{generic_array::GenericArray, NewBlockCipher};
-use aes::{Aes128, BlockDecrypt};
+use aes::cipher::generic_array::GenericArray;
+use aes::cipher::{BlockDecrypt, KeyInit};
+use aes::Aes128;
 use rand::Rng;
-use sec::{crc16, CRC_RESIDUAL_OK};
 use std;
-use yubicoerror::YubicoError;
 
 #[repr(C)]
 #[repr(packed)]
