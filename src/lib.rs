@@ -31,7 +31,12 @@ use rusb::{Context, UsbContext};
 use sec::{crc16, CRC_RESIDUAL_OK};
 use yubicoerror::YubicoError;
 
-const VENDOR_ID: u16 = 0x1050;
+const YUBICO_VENDOR_ID: u16 = 0x1050;
+const YUBIKEY_DEVICE_ID: [u16; 9] = [
+    0x0010, // YubiKey Gen 1 & 2
+    0x0110, 0x0113, 0x0114, 0x0116, // YubiKey NEO
+    0x0401, 0x0403, 0x0405, 0x0407, // Yubikey 4 & 5
+];
 
 /// The `Result` type used in this crate.
 type Result<T> = ::std::result::Result<T, YubicoError>;
@@ -88,7 +93,7 @@ impl Yubico {
     pub fn find_yubikey(&mut self) -> Result<Yubikey> {
         for device in self.context.devices().unwrap().iter() {
             let descr = device.device_descriptor().unwrap();
-            if descr.vendor_id() == VENDOR_ID {
+            if descr.vendor_id() == YUBICO_VENDOR_ID && YUBIKEY_DEVICE_ID.contains(&descr.product_id()) {
                 let name = device.open()?.read_product_string_ascii(&descr).ok();
                 let serial = self.read_serial_from_device(device.clone()).ok();
                 let yubikey = Yubikey {
@@ -110,7 +115,7 @@ impl Yubico {
     pub fn find_yubikey_from_serial(&mut self, serial: u32) -> Result<Yubikey> {
         for device in self.context.devices().unwrap().iter() {
             let descr = device.device_descriptor().unwrap();
-            if descr.vendor_id() == VENDOR_ID {
+            if descr.vendor_id() == YUBICO_VENDOR_ID && YUBIKEY_DEVICE_ID.contains(&descr.product_id()) {
                 let name = device.open()?.read_product_string_ascii(&descr).ok();
                 let fetched_serial = match self.read_serial_from_device(device.clone()).ok() {
                     Some(s) => s,
@@ -138,7 +143,7 @@ impl Yubico {
         let mut result: Vec<Yubikey> = Vec::new();
         for device in self.context.devices().unwrap().iter() {
             let descr = device.device_descriptor().unwrap();
-            if descr.vendor_id() == VENDOR_ID {
+            if descr.vendor_id() == YUBICO_VENDOR_ID && YUBIKEY_DEVICE_ID.contains(&descr.product_id()) {
                 let name = device.open()?.read_product_string_ascii(&descr).ok();
                 let serial = self.read_serial_from_device(device.clone()).ok();
                 let yubikey = Yubikey {
