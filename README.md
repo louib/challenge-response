@@ -1,6 +1,6 @@
 # challenge-response
 
-[![Latest Version]][crates.io] [![Documentation]][docs.rs] [![Dependency Status]][deps.rs] [![MIT licensed]][MIT] [![Apache-2.0 licensed]][APACHE]
+[![Latest Version]][crates.io] [![Documentation]][docs.rs] [![Build Status]][CI on Master] [![Dependency Status]][deps.rs] [![MIT licensed]][MIT] [![Apache-2.0 licensed]][APACHE]
 
 [Documentation]: https://docs.rs/challenge_response/badge.svg
 [docs.rs]: https://docs.rs/challenge-response/
@@ -12,6 +12,8 @@
 [APACHE]: ./LICENSE-APACHE
 [Dependency Status]: https://deps.rs/repo/github/louib/challenge-response/status.svg
 [deps.rs]: https://deps.rs/repo/github/louib/challenge-response
+[Build Status]: https://github.com/louib/challenge-response/actions/workflows/merge.yml/badge.svg?branch=master
+[CI on Master]: https://github.com/louib/challenge-response/actions/workflows/merge.yml
 
 **Challenge-Response library for Rust**
 
