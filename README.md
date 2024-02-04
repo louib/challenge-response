@@ -15,14 +15,18 @@
 [Build Status]: https://github.com/louib/challenge-response/actions/workflows/merge.yml/badge.svg?branch=master
 [CI on Master]: https://github.com/louib/challenge-response/actions/workflows/merge.yml
 
-**Challenge-Response library for Rust**
-
----
+`challenge-response` is a Rust library for performing [challenge-response](https://wiki.archlinux.org/index.php/yubikey#Function_and_Application_of_Challenge-Response) operations (hashing and encryption) using security keys like the YubiKey and the OnlyKey.
 
 ## Current features
 
-- [X] [Challenge-Response](https://wiki.archlinux.org/index.php/yubikey#Function_and_Application_of_Challenge-Response), YubiKey 2.2 and later supports HMAC-SHA1 or Yubico challenge-response operations.
-- [x] Configuration.
+- [HMAC-SHA1 Challenge-Response](https://datatracker.ietf.org/doc/html/rfc2104)
+- [Yubico OTP Challenge-Response encryption](https://docs.yubico.com/yesdk/users-manual/application-otp/yubico-otp.html)
+- Challenge-Response configuration
+
+## Supported devices
+
+- YubiKey 2.2 and later
+- OnlyKey (**untested**)
 
 ## Usage
 
