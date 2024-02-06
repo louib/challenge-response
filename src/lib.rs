@@ -91,7 +91,11 @@ impl Yubico {
     }
 
     pub fn find_yubikey(&mut self) -> Result<Yubikey> {
-        for device in self.context.devices().unwrap().iter() {
+        let devices = match self.context.devices() {
+            Ok(d) => d,
+            Err(e) => return Err(YubicoError::UsbError(e)),
+        };
+        for device in devices.iter() {
             let descr = device.device_descriptor().unwrap();
             if descr.vendor_id() == YUBICO_VENDOR_ID && YUBIKEY_DEVICE_ID.contains(&descr.product_id()) {
                 let name = device.open()?.read_product_string_ascii(&descr).ok();
@@ -113,7 +117,11 @@ impl Yubico {
     }
 
     pub fn find_yubikey_from_serial(&mut self, serial: u32) -> Result<Yubikey> {
-        for device in self.context.devices().unwrap().iter() {
+        let devices = match self.context.devices() {
+            Ok(d) => d,
+            Err(e) => return Err(YubicoError::UsbError(e)),
+        };
+        for device in devices.iter() {
             let descr = device.device_descriptor().unwrap();
             if descr.vendor_id() == YUBICO_VENDOR_ID && YUBIKEY_DEVICE_ID.contains(&descr.product_id()) {
                 let name = device.open()?.read_product_string_ascii(&descr).ok();
@@ -141,7 +149,11 @@ impl Yubico {
 
     pub fn find_all_yubikeys(&mut self) -> Result<Vec<Yubikey>> {
         let mut result: Vec<Yubikey> = Vec::new();
-        for device in self.context.devices().unwrap().iter() {
+        let devices = match self.context.devices() {
+            Ok(d) => d,
+            Err(e) => return Err(YubicoError::UsbError(e)),
+        };
+        for device in devices.iter() {
             let descr = device.device_descriptor().unwrap();
             if descr.vendor_id() == YUBICO_VENDOR_ID && YUBIKEY_DEVICE_ID.contains(&descr.product_id()) {
                 let name = device.open()?.read_product_string_ascii(&descr).ok();
