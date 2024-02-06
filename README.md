@@ -52,7 +52,8 @@ use rand::distributions::{Alphanumeric};
 fn main() {
    let mut yubi = Yubico::new();
 
-   if let Ok(device) = yubi.find_yubikey() {
+   if let Ok(devices) = yubi.find_all_yubikeys() {
+       let device = devices[0].clone();
        println!("Vendor ID: {:?} Product ID {:?}", device.vendor_id, device.product_id);
 
        let config = Config::new_from(device)
@@ -95,7 +96,8 @@ use challenge_response::config::{Config, Slot, Mode};
 fn main() {
    let mut yubi = Yubico::new();
 
-   if let Ok(device) = yubi.find_yubikey() {
+   if let Ok(devices) = yubi.find_all_yubikeys() {
+       let device = devices[0].clone();
        println!("Vendor ID: {:?} Product ID {:?}", device.vendor_id, device.product_id);
 
        let config = Config::new_from(device)

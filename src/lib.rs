@@ -90,28 +90,6 @@ impl Yubico {
         Ok(serial.0)
     }
 
-    pub fn find_yubikey(&mut self) -> Result<Yubikey> {
-        for device in self.context.devices().unwrap().iter() {
-            let descr = device.device_descriptor().unwrap();
-            if descr.vendor_id() == YUBICO_VENDOR_ID && YUBIKEY_DEVICE_ID.contains(&descr.product_id()) {
-                let name = device.open()?.read_product_string_ascii(&descr).ok();
-                let serial = self.read_serial_from_device(device.clone()).ok();
-                let yubikey = Yubikey {
-                    name: name,
-                    serial: serial,
-                    product_id: descr.product_id(),
-                    vendor_id: descr.vendor_id(),
-                    bus_id: device.bus_number(),
-                    address_id: device.address(),
-                };
-
-                return Ok(yubikey);
-            }
-        }
-
-        Err(YubicoError::DeviceNotFound)
-    }
-
     pub fn find_yubikey_from_serial(&mut self, serial: u32) -> Result<Yubikey> {
         for device in self.context.devices().unwrap().iter() {
             let descr = device.device_descriptor().unwrap();

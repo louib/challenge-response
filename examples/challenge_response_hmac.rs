@@ -8,7 +8,8 @@ use std::ops::Deref;
 fn main() {
     let mut yubi = Yubico::new();
 
-    if let Ok(device) = yubi.find_yubikey() {
+    if let Ok(devices) = yubi.find_all_yubikeys() {
+        let device = devices[0].clone();
         println!(
             "Vendor ID: {:?} Product ID {:?}",
             device.vendor_id, device.product_id
