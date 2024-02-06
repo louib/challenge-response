@@ -47,3 +47,18 @@ jobs:
           IFS=$'\n'; for file in $files; do
             rustfmt --check "$file"
           done
+
+  build:
+    name: Build the project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Build the project with all the features
+        run: cargo build --all-features
+
+      - name: Build the examples
+        run: cargo build --examples
