@@ -99,7 +99,7 @@ impl Yubico {
             Err(e) => return Err(YubicoError::UsbError(e)),
         };
         for device in devices.iter() {
-            let descr = device.device_descriptor().unwrap();
+            let descr = device.device_descriptor().map_err(|e| YubicoError::UsbError(e))?;
             if descr.vendor_id() != YUBICO_VENDOR_ID || !YUBIKEY_DEVICE_ID.contains(&descr.product_id()) {
                 continue;
             }
@@ -127,7 +127,7 @@ impl Yubico {
             Err(e) => return Err(YubicoError::UsbError(e)),
         };
         for device in devices.iter() {
-            let descr = device.device_descriptor().unwrap();
+            let descr = device.device_descriptor().map_err(|e| YubicoError::UsbError(e))?;
             if descr.vendor_id() != YUBICO_VENDOR_ID || !YUBIKEY_DEVICE_ID.contains(&descr.product_id()) {
                 continue;
             }
@@ -161,7 +161,7 @@ impl Yubico {
             Err(e) => return Err(YubicoError::UsbError(e)),
         };
         for device in devices.iter() {
-            let descr = device.device_descriptor().unwrap();
+            let descr = device.device_descriptor().map_err(|e| YubicoError::UsbError(e))?;
             if descr.vendor_id() != YUBICO_VENDOR_ID || !YUBIKEY_DEVICE_ID.contains(&descr.product_id()) {
                 continue;
             }
