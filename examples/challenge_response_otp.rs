@@ -5,7 +5,7 @@ use challenge_response::config::{Config, Mode, Slot};
 use challenge_response::Yubico;
 
 fn main() {
-    let mut yubi = Yubico::new();
+    let mut yubi = Yubico::new().unwrap();
 
     if let Ok(device) = yubi.find_yubikey() {
         println!(

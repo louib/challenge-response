@@ -6,7 +6,7 @@ use challenge_response::Yubico;
 use std::ops::Deref;
 
 fn main() {
-    let mut yubi = Yubico::new();
+    let mut yubi = Yubico::new().unwrap();
 
     if let Ok(device) = yubi.find_yubikey() {
         println!(

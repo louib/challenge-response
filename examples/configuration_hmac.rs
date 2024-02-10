@@ -9,7 +9,7 @@ use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
 fn main() {
-    let mut yubi = Yubico::new();
+    let mut yubi = Yubico::new().unwrap();
 
     if let Ok(device) = yubi.find_yubikey() {
         println!(

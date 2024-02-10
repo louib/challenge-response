@@ -1,3 +1,4 @@
+#![doc = include_str!("../README.md")]
 extern crate rusb;
 
 #[macro_use]
@@ -57,10 +58,12 @@ pub struct Yubico {
 
 impl Yubico {
     /// Creates a new Yubico instance.
-    pub fn new() -> Self {
-        Yubico {
-            context: Context::new().unwrap(),
-        }
+    pub fn new() -> Result<Self> {
+        let context = match Context::new() {
+            Ok(c) => c,
+            Err(e) => return Err(YubicoError::UsbError(e)),
+        };
+        Ok(Yubico { context })
     }
 
     fn read_serial_from_device(&mut self, device: rusb::Device<Context>) -> Result<u32> {

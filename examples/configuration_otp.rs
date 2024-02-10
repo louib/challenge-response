@@ -6,7 +6,7 @@ use challenge_response::otpmode::Aes128Key;
 use challenge_response::Yubico;
 
 fn main() {
-    let mut yubi = Yubico::new();
+    let mut yubi = Yubico::new().unwrap();
 
     if let Ok(device) = yubi.find_yubikey() {
         println!(

@@ -62,3 +62,14 @@ jobs:
 
       - name: Build the examples
         run: cargo build --examples
+
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - name: run cargo test
+        run: cargo test --all-features

@@ -54,7 +54,13 @@ use rand::{thread_rng, Rng};
 use rand::distributions::{Alphanumeric};
 
 fn main() {
-   let mut yubi = Yubico::new();
+   let mut yubi = match Yubico::new() {
+       Ok(y) => y,
+       Err(e) => {
+           eprintln!("{}", e.to_string());
+           return;
+       },
+   };
 
    if let Ok(device) = yubi.find_yubikey() {
        println!("Vendor ID: {:?} Product ID {:?}", device.vendor_id, device.product_id);
@@ -66,8 +72,8 @@ fn main() {
 
         // Secret must have 20 bytes
         // Used rand here, but you can set your own secret: let secret: &[u8; 20] = b"my_awesome_secret_20";
-        let secret: String = rng.sample_iter(&Alphanumeric).take(20).collect();
-        let hmac_key: HmacKey = HmacKey::from_slice(secret.as_bytes());
+        let secret: Vec<u8> = rng.sample_iter(&Alphanumeric).take(20).collect();
+        let hmac_key: HmacKey = HmacKey::from_slice(&secret);
 
         let mut device_config = DeviceModeConfig::default();
         device_config.challenge_response_hmac(&hmac_key, false, false);
@@ -97,7 +103,13 @@ use challenge_response::{Yubico};
 use challenge_response::config::{Config, Slot, Mode};
 
 fn main() {
-   let mut yubi = Yubico::new();
+   let mut yubi = match Yubico::new() {
+       Ok(y) => y,
+       Err(e) => {
+           eprintln!("{}", e.to_string());
+           return;
+       },
+   };
 
    if let Ok(device) = yubi.find_yubikey() {
        println!("Vendor ID: {:?} Product ID {:?}", device.vendor_id, device.product_id);
