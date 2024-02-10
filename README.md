@@ -43,30 +43,32 @@ Note, please read about the [initial configuration](https://wiki.archlinux.org/i
 Alternatively you can configure the yubikey with the official [Yubikey Personalization GUI](https://developers.yubico.com/yubikey-personalization-gui/).
 
 ```rust
-extern crate rand;
 extern crate challenge_response;
+extern crate rand;
 
-use challenge_response::{Yubico};
-use challenge_response::config::{Config, Command};
-use challenge_response::configure::{ DeviceModeConfig };
-use challenge_response::hmacmode::{ HmacKey };
+use challenge_response::config::{Command, Config};
+use challenge_response::configure::DeviceModeConfig;
+use challenge_response::hmacmode::HmacKey;
+use challenge_response::Yubico;
+use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
-use rand::distributions::{Alphanumeric};
 
 fn main() {
-   let mut yubi = match Yubico::new() {
-       Ok(y) => y,
-       Err(e) => {
-           eprintln!("{}", e.to_string());
-           return;
-       },
-   };
+    let mut yubi = match Yubico::new() {
+        Ok(y) => y,
+        Err(e) => {
+            eprintln!("{}", e.to_string());
+            return;
+        }
+    };
 
-   if let Ok(device) = yubi.find_yubikey() {
-       println!("Vendor ID: {:?} Product ID {:?}", device.vendor_id, device.product_id);
+    if let Ok(device) = yubi.find_yubikey() {
+        println!(
+            "Vendor ID: {:?} Product ID {:?}",
+            device.vendor_id, device.product_id
+        );
 
-       let config = Config::new_from(device)
-           .set_command(Command::Configuration2);
+        let config = Config::new_from(device).set_command(Command::Configuration2);
 
         let mut rng = thread_rng();
 
@@ -83,10 +85,9 @@ fn main() {
         } else {
             println!("Device configured");
         }
-
-   } else {
-       println!("Yubikey not found");
-   }
+    } else {
+        println!("Yubikey not found");
+    }
 }
 ```
 
@@ -95,44 +96,48 @@ fn main() {
 Configure the yubikey with [Yubikey Personalization GUI](https://developers.yubico.com/yubikey-personalization-gui/)
 
 ```rust
-extern crate hex;
 extern crate challenge_response;
+extern crate hex;
 
+use challenge_response::config::{Config, Mode, Slot};
+use challenge_response::Yubico;
 use std::ops::Deref;
-use challenge_response::{Yubico};
-use challenge_response::config::{Config, Slot, Mode};
 
 fn main() {
-   let mut yubi = match Yubico::new() {
-       Ok(y) => y,
-       Err(e) => {
-           eprintln!("{}", e.to_string());
-           return;
-       },
-   };
+    let mut yubi = match Yubico::new() {
+        Ok(y) => y,
+        Err(e) => {
+            eprintln!("{}", e.to_string());
+            return;
+        }
+    };
 
-   if let Ok(device) = yubi.find_yubikey() {
-       println!("Vendor ID: {:?} Product ID {:?}", device.vendor_id, device.product_id);
+    if let Ok(device) = yubi.find_yubikey() {
+        println!(
+            "Vendor ID: {:?} Product ID {:?}",
+            device.vendor_id, device.product_id
+        );
 
-       let config = Config::new_from(device)
-           .set_variable_size(true)
-           .set_mode(Mode::Sha1)
-           .set_slot(Slot::Slot2);
+        let config = Config::new_from(device)
+            .set_variable_size(true)
+            .set_mode(Mode::Sha1)
+            .set_slot(Slot::Slot2);
 
-       // Challenge can not be greater than 64 bytes
-       let challenge = String::from("mychallenge");
-       // In HMAC Mode, the result will always be the SAME for the SAME provided challenge
-       let hmac_result= yubi.challenge_response_hmac(challenge.as_bytes(), config).unwrap();
+        // Challenge can not be greater than 64 bytes
+        let challenge = String::from("mychallenge");
+        // In HMAC Mode, the result will always be the SAME for the SAME provided challenge
+        let hmac_result = yubi
+            .challenge_response_hmac(challenge.as_bytes(), config)
+            .unwrap();
 
-       // Just for debug, lets check the hex
-       let v: &[u8] = hmac_result.deref();
-       let hex_string = hex::encode(v);
+        // Just for debug, lets check the hex
+        let v: &[u8] = hmac_result.deref();
+        let hex_string = hex::encode(v);
 
-       println!("{}", hex_string);
-
-   } else {
-       println!("Yubikey not found");
-   }
+        println!("{}", hex_string);
+    } else {
+        println!("Yubikey not found");
+    }
 }
 ```
 
