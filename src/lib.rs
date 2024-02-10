@@ -18,7 +18,7 @@ pub mod error;
 pub mod hmacmode;
 mod manager;
 pub mod otpmode;
-pub mod sec;
+mod sec;
 
 use aes::cipher::generic_array::GenericArray;
 
