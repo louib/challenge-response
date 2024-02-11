@@ -1,9 +1,9 @@
 use config::Command;
+use error::ChallengeResponseError;
 use rusb::{request_type, Context, DeviceHandle, Direction, Recipient, RequestType, UsbContext};
 use sec::crc16;
 use std::time::Duration;
 use std::{slice, thread};
-use yubicoerror::YubicoError;
 
 const DATA_SIZE: usize = 64;
 const HID_GET_REPORT: u8 = 0x01;
@@ -21,11 +21,11 @@ pub fn open_device(
     context: &mut Context,
     bus_id: u8,
     address_id: u8,
-) -> Result<(DeviceHandle<Context>, Vec<u8>), YubicoError> {
+) -> Result<(DeviceHandle<Context>, Vec<u8>), ChallengeResponseError> {
     let devices = match context.devices() {
         Ok(device) => device,
         Err(_) => {
-            return Err(YubicoError::DeviceNotFound);
+            return Err(ChallengeResponseError::DeviceNotFound);
         }
     };
 
@@ -33,7 +33,7 @@ pub fn open_device(
         match device.device_descriptor() {
             Ok(_) => {}
             Err(_) => {
-                return Err(YubicoError::DeviceNotFound);
+                return Err(ChallengeResponseError::DeviceNotFound);
             }
         };
 
@@ -69,22 +69,28 @@ pub fn open_device(
                     return Ok((handle, _interfaces));
                 }
                 Err(_) => {
-                    return Err(YubicoError::OpenDeviceError);
+                    return Err(ChallengeResponseError::OpenDeviceError);
                 }
             }
         }
     }
 
-    Err(YubicoError::DeviceNotFound)
+    Err(ChallengeResponseError::DeviceNotFound)
 }
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
-pub fn close_device(_handle: DeviceHandle<Context>, _interfaces: Vec<u8>) -> Result<(), YubicoError> {
+pub fn close_device(
+    _handle: DeviceHandle<Context>,
+    _interfaces: Vec<u8>,
+) -> Result<(), ChallengeResponseError> {
     Ok(())
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-pub fn close_device(mut handle: DeviceHandle<Context>, interfaces: Vec<u8>) -> Result<(), YubicoError> {
+pub fn close_device(
+    mut handle: DeviceHandle<Context>,
+    interfaces: Vec<u8>,
+) -> Result<(), ChallengeResponseError> {
     for interface in interfaces {
         handle.release_interface(interface)?;
         handle.attach_kernel_driver(interface)?;
@@ -96,7 +102,7 @@ pub fn wait<F: Fn(Flags) -> bool>(
     handle: &mut DeviceHandle<Context>,
     f: F,
     buf: &mut [u8],
-) -> Result<(), YubicoError> {
+) -> Result<(), ChallengeResponseError> {
     loop {
         read(handle, buf)?;
         let flags = Flags::from_bits_truncate(buf[7]);
@@ -111,14 +117,14 @@ pub fn wait<F: Fn(Flags) -> bool>(
     }
 }
 
-pub fn read(handle: &mut DeviceHandle<Context>, buf: &mut [u8]) -> Result<usize, YubicoError> {
+pub fn read(handle: &mut DeviceHandle<Context>, buf: &mut [u8]) -> Result<usize, ChallengeResponseError> {
     assert_eq!(buf.len(), 8);
     let reqtype = request_type(Direction::In, RequestType::Class, Recipient::Interface);
     let value = REPORT_TYPE_FEATURE << 8;
     Ok(handle.read_control(reqtype, HID_GET_REPORT, value, 0, buf, Duration::new(2, 0))?)
 }
 
-pub fn write_frame(handle: &mut DeviceHandle<Context>, frame: &Frame) -> Result<(), YubicoError> {
+pub fn write_frame(handle: &mut DeviceHandle<Context>, frame: &Frame) -> Result<(), ChallengeResponseError> {
     let mut data = unsafe { slice::from_raw_parts(frame as *const Frame as *const u8, 70) };
 
     let mut seq = 0;
@@ -140,25 +146,28 @@ pub fn write_frame(handle: &mut DeviceHandle<Context>, frame: &Frame) -> Result<
     Ok(())
 }
 
-pub fn raw_write(handle: &mut DeviceHandle<Context>, packet: &[u8]) -> Result<(), YubicoError> {
+pub fn raw_write(handle: &mut DeviceHandle<Context>, packet: &[u8]) -> Result<(), ChallengeResponseError> {
     let reqtype = request_type(Direction::Out, RequestType::Class, Recipient::Interface);
     let value = REPORT_TYPE_FEATURE << 8;
     if handle.write_control(reqtype, HID_SET_REPORT, value, 0, &packet, Duration::new(2, 0))? != 8 {
-        Err(YubicoError::CanNotWriteToDevice)
+        Err(ChallengeResponseError::CanNotWriteToDevice)
     } else {
         Ok(())
     }
 }
 
 /// Reset the write state after a read.
-pub fn write_reset(handle: &mut DeviceHandle<Context>) -> Result<(), YubicoError> {
+pub fn write_reset(handle: &mut DeviceHandle<Context>) -> Result<(), ChallengeResponseError> {
     raw_write(handle, &[0, 0, 0, 0, 0, 0, 0, 0x8f])?;
     let mut buf = [0; 8];
     wait(handle, |x| !x.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
     Ok(())
 }
 
-pub fn read_response(handle: &mut DeviceHandle<Context>, response: &mut [u8]) -> Result<usize, YubicoError> {
+pub fn read_response(
+    handle: &mut DeviceHandle<Context>,
+    response: &mut [u8],
+) -> Result<usize, ChallengeResponseError> {
     let mut r0 = 0;
     wait(
         handle,

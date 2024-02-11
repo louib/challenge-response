@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::Yubikey;
+use crate::Device;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Slot {
@@ -90,7 +90,7 @@ pub enum Command {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Config {
-    pub yubikey: Yubikey,
+    pub device: Device,
     pub variable: bool,
     pub slot: Slot,
     pub mode: Mode,
@@ -99,9 +99,9 @@ pub struct Config {
 
 #[allow(dead_code)]
 impl Config {
-    pub fn new_from(yubikey: Yubikey) -> Config {
+    pub fn new_from(device: Device) -> Config {
         Config {
-            yubikey: yubikey,
+            device,
             variable: true,
             slot: Slot::Slot2,
             mode: Mode::Sha1,
