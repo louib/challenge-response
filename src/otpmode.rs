@@ -1,5 +1,5 @@
+use crate::error::ChallengeResponseError;
 use crate::sec::{crc16, CRC_RESIDUAL_OK};
-use crate::yubicoerror::YubicoError;
 use aes::cipher::generic_array::typenum::U16;
 use aes::cipher::generic_array::GenericArray;
 use aes::cipher::{BlockDecrypt, KeyInit};
@@ -77,7 +77,7 @@ impl Aes128Block {
     /// must check that the `uid` field is equal to the known private
     /// id, and that the `(use_counter, session_counter)` is strictly
     /// larger than the last value seen.
-    pub fn check(&self, key: &Aes128Key, challenge: &[u8]) -> Result<Otp, YubicoError> {
+    pub fn check(&self, key: &Aes128Key, challenge: &[u8]) -> Result<Otp, ChallengeResponseError> {
         let aes_dec = Aes128::new(GenericArray::from_slice(&key.0));
         let mut tmp = Otp::default();
         {
@@ -87,7 +87,7 @@ impl Aes128Block {
             tmp.copy_from_slice(block_copy);
 
             if crc16(&tmp) != CRC_RESIDUAL_OK {
-                return Err(YubicoError::WrongCRC);
+                return Err(ChallengeResponseError::WrongCRC);
             }
         }
 

@@ -2,12 +2,12 @@ extern crate challenge_response;
 extern crate hex;
 
 use challenge_response::config::{Config, Mode, Slot};
-use challenge_response::Yubico;
+use challenge_response::ChallengeResponse;
 
 fn main() {
-    let mut yubi = Yubico::new().unwrap();
+    let mut challenge_response = ChallengeResponse::new().unwrap();
 
-    if let Ok(device) = yubi.find_yubikey() {
+    if let Ok(device) = challenge_response.find_device() {
         println!(
             "Vendor ID: {:?} Product ID {:?}",
             device.vendor_id, device.product_id
@@ -18,7 +18,9 @@ fn main() {
         // Challenge can not be greater than 64 bytes
         let challenge: &[u8] = b"my_challenge";
         // In OTP Mode, the result will always be different, even if the challenge is the same
-        let otp_result = yubi.challenge_response_otp(challenge, config).unwrap();
+        let otp_result = challenge_response
+            .challenge_response_otp(challenge, config)
+            .unwrap();
 
         // Just for debug, lets check the hex
         let v: &[u8] = &otp_result.block;
@@ -26,6 +28,6 @@ fn main() {
 
         println!("{}", hex_string);
     } else {
-        println!("Yubikey not found");
+        println!("Device not found");
     }
 }
