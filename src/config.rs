@@ -97,7 +97,6 @@ pub struct Config {
     pub command: Command,
 }
 
-#[allow(dead_code)]
 impl Config {
     pub fn new_from(device: Device) -> Config {
         Config {
