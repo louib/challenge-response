@@ -27,6 +27,7 @@
 
 - YubiKey 2.2 and later
 - OnlyKey (**untested**)
+- NitroKey (**untested**)
 
 ## Usage
 

@@ -32,11 +32,17 @@ use otpmode::Aes128Block;
 use rusb::{Context, UsbContext};
 use sec::{crc16, CRC_RESIDUAL_OK};
 
-const YUBICO_VENDOR_ID: u16 = 0x1050;
-const YUBIKEY_DEVICE_ID: [u16; 9] = [
+const VENDOR_ID: [u16; 3] = [
+    0x1050, // Yubico ( Yubikeys )
+    0x1D50, // OpenMoko ( Onlykey )
+    0x20A0, // Flirc ( Nitrokey )
+];
+const PRODUCT_ID: [u16; 11] = [
     0x0010, // YubiKey Gen 1 & 2
     0x0110, 0x0113, 0x0114, 0x0116, // YubiKey NEO
     0x0401, 0x0403, 0x0405, 0x0407, // Yubikey 4 & 5
+    0x60FC, // Onlykey
+    0x4211, // NitroKey
 ];
 
 /// The `Result` type used in this crate.
@@ -102,7 +108,7 @@ impl ChallengeResponse {
             let descr = device
                 .device_descriptor()
                 .map_err(|e| ChallengeResponseError::UsbError(e))?;
-            if descr.vendor_id() != YUBICO_VENDOR_ID || !YUBIKEY_DEVICE_ID.contains(&descr.product_id()) {
+            if !VENDOR_ID.contains(&descr.vendor_id()) || !PRODUCT_ID.contains(&descr.product_id()) {
                 continue;
             }
 
@@ -132,7 +138,7 @@ impl ChallengeResponse {
             let descr = device
                 .device_descriptor()
                 .map_err(|e| ChallengeResponseError::UsbError(e))?;
-            if descr.vendor_id() != YUBICO_VENDOR_ID || !YUBIKEY_DEVICE_ID.contains(&descr.product_id()) {
+            if !VENDOR_ID.contains(&descr.vendor_id()) || !PRODUCT_ID.contains(&descr.product_id()) {
                 continue;
             }
 
@@ -168,7 +174,7 @@ impl ChallengeResponse {
             let descr = device
                 .device_descriptor()
                 .map_err(|e| ChallengeResponseError::UsbError(e))?;
-            if descr.vendor_id() != YUBICO_VENDOR_ID || !YUBIKEY_DEVICE_ID.contains(&descr.product_id()) {
+            if !VENDOR_ID.contains(&descr.vendor_id()) || !PRODUCT_ID.contains(&descr.product_id()) {
                 continue;
             }
 
