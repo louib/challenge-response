@@ -160,3 +160,7 @@ fn main() {
 ## Credits
 
 This library was originally a fork of the [yubico_manager](https://crates.io/crates/yubico_manager) library.
+
+## License
+
+MIT OR Apache-2.0
