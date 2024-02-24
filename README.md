@@ -119,31 +119,40 @@ fn main() {
         }
     };
 
-    if let Ok(device) = cr_client.find_device() {
-        println!(
-            "Vendor ID: {:?} Product ID {:?}",
-            device.vendor_id, device.product_id
-        );
-
-        let config = Config::new_from(device).set_command(Command::Configuration2);
-
-        let mut rng = thread_rng();
-
-        // Secret must have 20 bytes
-        // Used rand here, but you can set your own secret: let secret: &[u8; 20] = b"my_awesome_secret_20";
-        let secret: Vec<u8> = rng.sample_iter(&Alphanumeric).take(20).collect();
-        let hmac_key: HmacKey = HmacKey::from_slice(&secret);
-
-        let mut device_config = DeviceModeConfig::default();
-        device_config.challenge_response_hmac(&hmac_key, false, false);
-
-        if let Err(err) = cr_client.write_config(config, &mut device_config) {
-            println!("{:?}", err);
-        } else {
-            println!("Device configured");
+    let device = match cr_client.find_device() {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("Device not found: {}", e.to_string());
+            return;
         }
+    };
+
+    println!(
+        "Vendor ID: {:?} Product ID {:?}",
+        device.vendor_id, device.product_id
+    );
+
+    let config = Config::new_from(device)
+        .set_command(Command::Configuration2);
+
+    let mut rng = thread_rng();
+
+    // Secret must have 20 bytes
+    // Used rand here, but you can set your own secret:
+    // let secret: &[u8; 20] = b"my_awesome_secret_20";
+    let secret: Vec<u8> =
+        rng.sample_iter(&Alphanumeric).take(20).collect();
+    let hmac_key: HmacKey = HmacKey::from_slice(&secret);
+
+    let mut device_config = DeviceModeConfig::default();
+    device_config.challenge_response_hmac(&hmac_key, false, false);
+
+    if let Err(err) =
+        cr_client.write_config(config, &mut device_config)
+    {
+        println!("{:?}", err);
     } else {
-        println!("Device not found");
+        println!("Device configured");
     }
 }
 ```
