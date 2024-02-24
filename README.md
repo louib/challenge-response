@@ -38,6 +38,62 @@ Add this to your Cargo.toml
 challenge_response = "0"
 ```
 
+### Perform a Challenge-Response (HMAC-SHA1 mode)
+
+If you are using a YubiKey, you can configure the HMAC-SHA1 Challenge-Response
+with the [Yubikey Personalization GUI](https://developers.yubico.com/yubikey-personalization-gui/).
+
+```rust
+extern crate challenge_response;
+extern crate hex;
+
+use challenge_response::config::{Config, Mode, Slot};
+use challenge_response::ChallengeResponse;
+use std::ops::Deref;
+
+fn main() {
+    let mut cr_client = match ChallengeResponse::new() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("{}", e.to_string());
+            return;
+        }
+    };
+
+    let device = match cr_client.find_device() {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("Device not found: {}", e.to_string());
+            return;
+        }
+    };
+
+    println!(
+        "Vendor ID: {:?} Product ID {:?}",
+        device.vendor_id, device.product_id
+    );
+
+    let config = Config::new_from(device)
+        .set_variable_size(true)
+        .set_mode(Mode::Sha1)
+        .set_slot(Slot::Slot2);
+
+    // Challenge can not be greater than 64 bytes
+    let challenge = String::from("mychallenge");
+    // In HMAC Mode, the result will always be the
+    // SAME for the SAME provided challenge
+    let hmac_result = cr_client
+        .challenge_response_hmac(challenge.as_bytes(), config)
+        .unwrap();
+
+    // Just for debug, lets check the hex
+    let v: &[u8] = hmac_result.deref();
+    let hex_string = hex::encode(v);
+
+    println!("{}", hex_string);
+}
+```
+
 ### Configure Yubikey (HMAC-SHA1 mode)
 
 Note, please read about the [initial configuration](https://wiki.archlinux.org/index.php/yubikey#Initial_configuration)
@@ -55,7 +111,7 @@ use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
 fn main() {
-    let mut challenge_response = match ChallengeResponse::new() {
+    let mut cr_client = match ChallengeResponse::new() {
         Ok(y) => y,
         Err(e) => {
             eprintln!("{}", e.to_string());
@@ -63,7 +119,7 @@ fn main() {
         }
     };
 
-    if let Ok(device) = challenge_response.find_device() {
+    if let Ok(device) = cr_client.find_device() {
         println!(
             "Vendor ID: {:?} Product ID {:?}",
             device.vendor_id, device.product_id
@@ -81,61 +137,11 @@ fn main() {
         let mut device_config = DeviceModeConfig::default();
         device_config.challenge_response_hmac(&hmac_key, false, false);
 
-        if let Err(err) = challenge_response.write_config(config, &mut device_config) {
+        if let Err(err) = cr_client.write_config(config, &mut device_config) {
             println!("{:?}", err);
         } else {
             println!("Device configured");
         }
-    } else {
-        println!("Device not found");
-    }
-}
-```
-
-### Example Challenge-Response (HMAC-SHA1 mode)
-
-Configure the yubikey with [Yubikey Personalization GUI](https://developers.yubico.com/yubikey-personalization-gui/)
-
-```rust
-extern crate challenge_response;
-extern crate hex;
-
-use challenge_response::config::{Config, Mode, Slot};
-use challenge_response::ChallengeResponse;
-use std::ops::Deref;
-
-fn main() {
-    let mut challenge_response = match ChallengeResponse::new() {
-        Ok(y) => y,
-        Err(e) => {
-            eprintln!("{}", e.to_string());
-            return;
-        }
-    };
-
-    if let Ok(device) = challenge_response.find_device() {
-        println!(
-            "Vendor ID: {:?} Product ID {:?}",
-            device.vendor_id, device.product_id
-        );
-
-        let config = Config::new_from(device)
-            .set_variable_size(true)
-            .set_mode(Mode::Sha1)
-            .set_slot(Slot::Slot2);
-
-        // Challenge can not be greater than 64 bytes
-        let challenge = String::from("mychallenge");
-        // In HMAC Mode, the result will always be the SAME for the SAME provided challenge
-        let hmac_result = challenge_response
-            .challenge_response_hmac(challenge.as_bytes(), config)
-            .unwrap();
-
-        // Just for debug, lets check the hex
-        let v: &[u8] = hmac_result.deref();
-        let hex_string = hex::encode(v);
-
-        println!("{}", hex_string);
     } else {
         println!("Device not found");
     }
