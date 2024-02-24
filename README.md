@@ -105,7 +105,7 @@ extern crate rand;
 
 use challenge_response::config::{Command, Config};
 use challenge_response::configure::DeviceModeConfig;
-use challenge_response::hmacmode::HmacKey;
+use challenge_response::hmacmode::{HMAC_SECRET_SIZE, HmacKey};
 use challenge_response::ChallengeResponse;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
@@ -137,11 +137,10 @@ fn main() {
 
     let mut rng = thread_rng();
 
-    // Secret must have 20 bytes
     // Used rand here, but you can set your own secret:
-    // let secret: &[u8; 20] = b"my_awesome_secret_20";
+    // let secret: &[u8; HMAC_SECRET_SIZE] = b"my_awesome_secret_20";
     let secret: Vec<u8> =
-        rng.sample_iter(&Alphanumeric).take(20).collect();
+        rng.sample_iter(&Alphanumeric).take(HMAC_SECRET_SIZE).collect();
     let hmac_key: HmacKey = HmacKey::from_slice(&secret);
 
     let mut device_config = DeviceModeConfig::default();
