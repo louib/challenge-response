@@ -166,4 +166,4 @@ This library was originally a fork of the [yubico_manager](https://crates.io/cra
 
 ## License
 
-MIT OR Apache-2.0
+MIT or Apache-2.0
