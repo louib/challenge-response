@@ -39,7 +39,7 @@ pub fn open_device(
 
         if device.bus_number() == bus_id && device.address() == address_id {
             match device.open() {
-                Ok(mut handle) => {
+                Ok(handle) => {
                     let config = match device.config_descriptor(0) {
                         Ok(c) => c,
                         Err(_) => continue,
@@ -87,10 +87,7 @@ pub fn close_device(
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-pub fn close_device(
-    mut handle: DeviceHandle<Context>,
-    interfaces: Vec<u8>,
-) -> Result<(), ChallengeResponseError> {
+pub fn close_device(handle: DeviceHandle<Context>, interfaces: Vec<u8>) -> Result<(), ChallengeResponseError> {
     for interface in interfaces {
         handle.release_interface(interface)?;
         handle.attach_kernel_driver(interface)?;
@@ -208,8 +205,8 @@ pub struct Frame {
 impl Frame {
     pub fn new(payload: [u8; DATA_SIZE], command: Command) -> Self {
         let mut f = Frame {
-            payload: payload,
-            command: command,
+            payload,
+            command,
             crc: 0,
             filler: [0; 3],
         };
