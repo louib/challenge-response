@@ -73,21 +73,21 @@ impl ChallengeResponse {
     }
 
     fn read_serial_from_device(&mut self, device: rusb::Device<Context>) -> Result<u32> {
-        let mut handle = manager::open_device(&mut self.context, device.bus_number(), device.address())?;
+        let (mut handle, interfaces) =
+            manager::open_device(&mut self.context, device.bus_number(), device.address())?;
         let challenge = [0; 64];
         let command = Command::DeviceSerial;
 
         let d = Frame::new(challenge, command); // FixMe: do not need a challange
         let mut buf = [0; 8];
-        manager::wait(&mut handle.0, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
+        manager::wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
 
-        manager::write_frame(&mut handle.0, &d)?;
+        manager::write_frame(&mut handle, &d)?;
 
         // Read the response.
         let mut response = [0; 36];
-        manager::read_response(&mut handle.0, &mut response)?;
-
-        drop(handle); // Close Device
+        manager::read_response(&mut handle, &mut response)?;
+        manager::close_device(handle, interfaces)?;
 
         // Check response.
         if crc16(&response[..6]) != crate::sec::CRC_RESIDUAL_OK {
