@@ -45,6 +45,10 @@ const PRODUCT_ID: [u16; 11] = [
     0x4211, // NitroKey
 ];
 
+/// If using a variable-length challenge, the challenge must be stricly smaller than this value.
+/// If using a fixed-length challenge, the challenge must be exactly equal to this value.
+pub const CHALLENGE_SIZE: usize = 64;
+
 /// The `Result` type used in this crate.
 type Result<T> = ::std::result::Result<T, ChallengeResponseError>;
 
@@ -75,7 +79,7 @@ impl ChallengeResponse {
     fn read_serial_from_device(&mut self, device: rusb::Device<Context>) -> Result<u32> {
         let (mut handle, interfaces) =
             manager::open_device(&mut self.context, device.bus_number(), device.address())?;
-        let challenge = [0; 64];
+        let challenge = [0; CHALLENGE_SIZE];
         let command = Command::DeviceSerial;
 
         let d = Frame::new(challenge, command); // FixMe: do not need a challange
@@ -221,7 +225,7 @@ impl ChallengeResponse {
     pub fn read_serial_number(&mut self, conf: Config) -> Result<u32> {
         match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
             Ok((mut handle, interfaces)) => {
-                let challenge = [0; 64];
+                let challenge = [0; CHALLENGE_SIZE];
                 let command = Command::DeviceSerial;
 
                 let d = Frame::new(challenge, command); // FixMe: do not need a challange
@@ -257,10 +261,10 @@ impl ChallengeResponse {
 
         match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
             Ok((mut handle, interfaces)) => {
-                let mut challenge = [0; 64];
+                let mut challenge = [0; CHALLENGE_SIZE];
 
                 if conf.variable && chall.last() == Some(&0) {
-                    challenge = [0xff; 64];
+                    challenge = [0xff; CHALLENGE_SIZE];
                 }
 
                 let mut command = Command::ChallengeHmac1;
@@ -304,8 +308,7 @@ impl ChallengeResponse {
 
         match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
             Ok((mut handle, interfaces)) => {
-                let mut challenge = [0; 64];
-                //(&mut challenge[..6]).copy_from_slice(chall);
+                let mut challenge = [0; CHALLENGE_SIZE];
 
                 let mut command = Command::ChallengeOtp1;
                 if let Slot::Slot2 = conf.slot {

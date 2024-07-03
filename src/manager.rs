@@ -5,7 +5,7 @@ use sec::crc16;
 use std::time::Duration;
 use std::{slice, thread};
 
-const DATA_SIZE: usize = 64;
+pub(crate) const PAYLOAD_SIZE: usize = 64;
 const HID_GET_REPORT: u8 = 0x01;
 const HID_SET_REPORT: u8 = 0x09;
 const REPORT_TYPE_FEATURE: u16 = 0x03;
@@ -196,14 +196,14 @@ pub fn read_response(
 #[repr(C)]
 #[repr(packed)]
 pub struct Frame {
-    pub payload: [u8; DATA_SIZE],
+    pub payload: [u8; PAYLOAD_SIZE],
     command: Command,
     crc: u16,
     filler: [u8; 3],
 }
 
 impl Frame {
-    pub fn new(payload: [u8; DATA_SIZE], command: Command) -> Self {
+    pub fn new(payload: [u8; PAYLOAD_SIZE], command: Command) -> Self {
         let mut f = Frame {
             payload,
             command,
