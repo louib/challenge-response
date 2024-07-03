@@ -48,7 +48,7 @@ const SIZEOF_CONFIG: usize = 52;
 impl DeviceModeConfig {
     #[doc(hidden)]
     pub fn to_frame(&mut self, command: Command) -> Frame {
-        let mut payload = [0; 64];
+        let mut payload = [0; crate::manager::PAYLOAD_SIZE];
         // First set CRC.
         self.crc = {
             let first_fields = unsafe {
