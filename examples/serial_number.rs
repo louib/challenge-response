@@ -7,7 +7,7 @@ use challenge_response::ChallengeResponse;
 fn main() {
     let mut challenge_response = ChallengeResponse::new().unwrap();
 
-    if let Ok(device) = challenge_response.find_device() {
+    if let Ok(device) = challenge_response.find_device_nusb() {
         println!(
             "Vendor ID: {:?} Product ID {:?}",
             device.vendor_id, device.product_id

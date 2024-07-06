@@ -11,6 +11,7 @@ pub enum ChallengeResponseError {
     DeviceNotFound,
     OpenDeviceError,
     CanNotWriteToDevice,
+    CanNotReadFromDevice,
     WrongCRC,
     ConfigNotWritten,
 }
@@ -25,6 +26,7 @@ impl fmt::Display for ChallengeResponseError {
             ChallengeResponseError::CommandNotSupported => write!(f, "Command Not Supported"),
             ChallengeResponseError::WrongCRC => write!(f, "Wrong CRC"),
             ChallengeResponseError::CanNotWriteToDevice => write!(f, "Can not write to Device"),
+            ChallengeResponseError::CanNotReadFromDevice => write!(f, "Can not read from Device"),
             ChallengeResponseError::ConfigNotWritten => write!(f, "Configuration has failed"),
         }
     }

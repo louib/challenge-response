@@ -8,7 +8,7 @@ use std::ops::Deref;
 fn main() {
     let mut challenge_response = ChallengeResponse::new().unwrap();
 
-    if let Ok(device) = challenge_response.find_device() {
+    if let Ok(device) = challenge_response.find_device_nusb() {
         println!(
             "Vendor ID: {:?} Product ID {:?}",
             device.vendor_id, device.product_id
@@ -18,6 +18,7 @@ fn main() {
             .set_variable_size(true)
             .set_mode(Mode::Sha1)
             .set_slot(Slot::Slot2);
+        println!("config: {:?}", config);
 
         // Challenge can not be greater than 64 bytes
         let challenge = String::from("mychallenge");
