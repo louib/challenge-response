@@ -19,3 +19,7 @@ cargo run --release --example "challenge_response_otp"
 ## Read Serial Number
 
 cargo run --release --example "serial_number"
+
+## Find all the connected devices
+
+cargo run --release --example "find_all_devices"
