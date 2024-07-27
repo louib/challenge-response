@@ -6,9 +6,9 @@ use std::time::Duration;
 use std::{slice, thread};
 
 pub(crate) const PAYLOAD_SIZE: usize = 64;
-const HID_GET_REPORT: u8 = 0x01;
-const HID_SET_REPORT: u8 = 0x09;
-const REPORT_TYPE_FEATURE: u16 = 0x03;
+pub(crate) const HID_GET_REPORT: u8 = 0x01;
+pub(crate) const HID_SET_REPORT: u8 = 0x09;
+pub(crate) const REPORT_TYPE_FEATURE: u16 = 0x03;
 
 bitflags! {
     pub struct Flags: u8 {
@@ -37,40 +37,41 @@ pub fn open_device(
             }
         };
 
-        if device.bus_number() == bus_id && device.address() == address_id {
-            match device.open() {
-                Ok(handle) => {
-                    let config = match device.config_descriptor(0) {
-                        Ok(c) => c,
-                        Err(_) => continue,
-                    };
+        if device.bus_number() != bus_id || device.address() != address_id {
+            continue;
+        }
+        match device.open() {
+            Ok(mut handle) => {
+                let config = match device.config_descriptor(0) {
+                    Ok(c) => c,
+                    Err(_) => continue,
+                };
 
-                    let mut _interfaces = Vec::new();
-                    for interface in config.interfaces() {
-                        for usb_int in interface.descriptors() {
-                            match handle.kernel_driver_active(usb_int.interface_number()) {
-                                Ok(true) => {
-                                    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-                                    handle.detach_kernel_driver(usb_int.interface_number())?;
-                                }
-                                _ => continue,
-                            };
-
-                            if handle.active_configuration()? != config.number() {
-                                handle.set_active_configuration(config.number())?;
+                let mut _interfaces = Vec::new();
+                for interface in config.interfaces() {
+                    for usb_int in interface.descriptors() {
+                        match handle.kernel_driver_active(usb_int.interface_number()) {
+                            Ok(true) => {
+                                #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+                                handle.detach_kernel_driver(usb_int.interface_number())?;
                             }
-                            #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-                            handle.claim_interface(usb_int.interface_number())?;
-                            #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-                            _interfaces.push(usb_int.interface_number());
-                        }
-                    }
+                            _ => continue,
+                        };
 
-                    return Ok((handle, _interfaces));
+                        if handle.active_configuration()? != config.number() {
+                            handle.set_active_configuration(config.number())?;
+                        }
+                        #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+                        handle.claim_interface(usb_int.interface_number())?;
+                        #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+                        _interfaces.push(usb_int.interface_number());
+                    }
                 }
-                Err(_) => {
-                    return Err(ChallengeResponseError::OpenDeviceError);
-                }
+
+                return Ok((handle, _interfaces));
+            }
+            Err(_) => {
+                return Err(ChallengeResponseError::OpenDeviceError);
             }
         }
     }
@@ -80,14 +81,17 @@ pub fn open_device(
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 pub fn close_device(
-    _handle: DeviceHandle<Context>,
+    mut _handle: DeviceHandle<Context>,
     _interfaces: Vec<u8>,
 ) -> Result<(), ChallengeResponseError> {
     Ok(())
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-pub fn close_device(handle: DeviceHandle<Context>, interfaces: Vec<u8>) -> Result<(), ChallengeResponseError> {
+pub fn close_device(
+    mut handle: DeviceHandle<Context>,
+    interfaces: Vec<u8>,
+) -> Result<(), ChallengeResponseError> {
     for interface in interfaces {
         handle.release_interface(interface)?;
         handle.attach_kernel_driver(interface)?;

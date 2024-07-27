@@ -1,4 +1,6 @@
 #![doc = include_str!("../README.md")]
+
+extern crate nusb;
 extern crate rusb;
 
 #[macro_use]
@@ -17,6 +19,7 @@ pub mod configure;
 pub mod error;
 pub mod hmacmode;
 mod manager;
+mod nusb_manager;
 pub mod otpmode;
 mod sec;
 
@@ -62,9 +65,36 @@ pub struct Device {
     pub address_id: u8,
 }
 
+impl Device {
+    #[cfg(not(feature = "nusb"))]
+    pub fn from_native(native_device: rusb::Device<Context>) -> Result<Device> {
+        let descr = native_device
+            .device_descriptor()
+            .map_err(|e| ChallengeResponseError::UsbError(e))?;
+
+        Ok(Device {
+            name: None,
+            serial: None,
+            product_id: descr.product_id(),
+            vendor_id: descr.vendor_id(),
+            bus_id: native_device.bus_number(),
+            address_id: native_device.address(),
+        })
+    }
+
+    #[cfg(feature = "nusb")]
+    pub fn from_native(native_device: rusb::Device<Context>) -> Result<Device> {
+        Err(ChallengeResponseError::UnsupportedFeature)
+    }
+}
+
 pub struct ChallengeResponse {
     context: Context,
 }
+
+pub type USBContext = Context;
+pub type NativeDevice = rusb::Device<Context>;
+type DeviceFunction<R> = fn(Device) -> R;
 
 impl ChallengeResponse {
     /// Creates a new ChallengeResponse instance.
@@ -76,22 +106,39 @@ impl ChallengeResponse {
         Ok(ChallengeResponse { context })
     }
 
+    fn iter_on_devices<F, R>(&mut self, f: F) -> Result<R>
+    where
+        F: Fn(&Device) -> Result<Option<R>>,
+    {
+        let devices = match self.context.devices() {
+            Ok(d) => d,
+            Err(e) => return Err(ChallengeResponseError::UsbError(e)),
+        };
+        for device in devices.iter() {
+            let device = Device::from_native(device.clone())?;
+            let iter_response = f(&device)?;
+            if let Some(response) = iter_response {
+                return Ok(response);
+            }
+        }
+        Err(ChallengeResponseError::DeviceNotFound)
+    }
+
     fn read_serial_from_device(&mut self, device: rusb::Device<Context>) -> Result<u32> {
-        let (mut handle, interfaces) =
-            manager::open_device(&mut self.context, device.bus_number(), device.address())?;
+        let (mut handle, interfaces) = nusb_manager::open_device(device.bus_number(), device.address())?;
         let challenge = [0; CHALLENGE_SIZE];
         let command = Command::DeviceSerial;
 
         let d = Frame::new(challenge, command); // FixMe: do not need a challange
         let mut buf = [0; 8];
-        manager::wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
+        nusb_manager::wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
 
-        manager::write_frame(&mut handle, &d)?;
+        nusb_manager::write_frame(&mut handle, &d)?;
 
         // Read the response.
         let mut response = [0; 36];
-        manager::read_response(&mut handle, &mut response)?;
-        manager::close_device(handle, interfaces)?;
+        nusb_manager::read_response(&mut handle, &mut response)?;
+        nusb_manager::close_device(handle, interfaces)?;
 
         // Check response.
         if crc16(&response[..6]) != crate::sec::CRC_RESIDUAL_OK {
@@ -168,6 +215,51 @@ impl ChallengeResponse {
         Err(ChallengeResponseError::DeviceNotFound)
     }
 
+    pub fn find_device_nusb(&mut self) -> Result<Device> {
+        match self.find_all_devices_nusb() {
+            Ok(devices) => {
+                if !devices.is_empty() {
+                    return Ok(devices[0].clone());
+                }
+                Err(ChallengeResponseError::DeviceNotFound)
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn find_all_devices_nusb(&mut self) -> Result<Vec<Device>> {
+        let mut devices: Vec<Device> = Vec::new();
+        let nusb_devices = nusb::list_devices();
+        let nusb_devices = nusb_devices.unwrap();
+        for device_info in nusb_devices {
+            let product_id = device_info.product_id();
+            let vendor_id = device_info.vendor_id();
+
+            if !VENDOR_ID.contains(&vendor_id) || !PRODUCT_ID.contains(&product_id) {
+                continue;
+            }
+
+            devices.push(Device {
+                name: match device_info.manufacturer_string() {
+                    Some(name) => Some(name.to_string()),
+                    None => Some("unknown".to_string()),
+                },
+                serial: match device_info.serial_number() {
+                    Some(serial) => match serial.parse::<u32>() {
+                        Ok(s) => Some(s),
+                        Err(_) => None,
+                    },
+                    None => None,
+                },
+                product_id,
+                vendor_id,
+                bus_id: device_info.bus_number(),
+                address_id: device_info.device_address(),
+            });
+        }
+        Ok(devices)
+    }
+
     pub fn find_all_devices(&mut self) -> Result<Vec<Device>> {
         let mut result: Vec<Device> = Vec::new();
         let devices = match self.context.devices() {
@@ -223,25 +315,25 @@ impl ChallengeResponse {
     }
 
     pub fn read_serial_number(&mut self, conf: Config) -> Result<u32> {
-        match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
+        match nusb_manager::open_device(conf.device.bus_id, conf.device.address_id) {
             Ok((mut handle, interfaces)) => {
                 let challenge = [0; CHALLENGE_SIZE];
                 let command = Command::DeviceSerial;
 
                 let d = Frame::new(challenge, command); // FixMe: do not need a challange
                 let mut buf = [0; 8];
-                manager::wait(
+                nusb_manager::wait(
                     &mut handle,
                     |f| !f.contains(manager::Flags::SLOT_WRITE_FLAG),
                     &mut buf,
                 )?;
 
-                manager::write_frame(&mut handle, &d)?;
+                nusb_manager::write_frame(&mut handle, &d)?;
 
                 // Read the response.
                 let mut response = [0; 36];
-                manager::read_response(&mut handle, &mut response)?;
-                manager::close_device(handle, interfaces)?;
+                nusb_manager::read_response(&mut handle, &mut response)?;
+                nusb_manager::close_device(handle, interfaces)?;
 
                 // Check response.
                 if crc16(&response[..6]) != CRC_RESIDUAL_OK {
@@ -257,9 +349,9 @@ impl ChallengeResponse {
     }
 
     pub fn challenge_response_hmac(&mut self, chall: &[u8], conf: Config) -> Result<Hmac> {
-        let mut hmac = Hmac([0; 20]);
+        let mut hmac = Hmac([0; crate::hmacmode::HMAC_SECRET_SIZE]);
 
-        match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
+        match nusb_manager::open_device(conf.device.bus_id, conf.device.address_id) {
             Ok((mut handle, interfaces)) => {
                 let mut challenge = [0; CHALLENGE_SIZE];
 
@@ -274,19 +366,20 @@ impl ChallengeResponse {
 
                 (&mut challenge[..chall.len()]).copy_from_slice(chall);
                 let d = Frame::new(challenge, command);
+
                 let mut buf = [0; 8];
-                manager::wait(
+                nusb_manager::wait(
                     &mut handle,
                     |f| !f.contains(manager::Flags::SLOT_WRITE_FLAG),
                     &mut buf,
                 )?;
 
-                manager::write_frame(&mut handle, &d)?;
+                nusb_manager::write_frame(&mut handle, &d)?;
 
                 // Read the response.
                 let mut response = [0; 36];
-                manager::read_response(&mut handle, &mut response)?;
-                manager::close_device(handle, interfaces)?;
+                nusb_manager::read_response(&mut handle, &mut response)?;
+                nusb_manager::close_device(handle, interfaces)?;
 
                 // Check response.
                 if crc16(&response[..22]) != CRC_RESIDUAL_OK {
