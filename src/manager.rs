@@ -5,7 +5,13 @@ use sec::crc16;
 use std::time::Duration;
 use std::{slice, thread};
 
+/// The size of the payload when writing a request to the usb interface.
 pub(crate) const PAYLOAD_SIZE: usize = 64;
+/// The size of the response after writing a request to the usb interface.
+pub(crate) const RESPONSE_SIZE: usize = 36;
+/// The size of the payload to change the state of the device
+pub(crate) const STATUS_UPDATE_PAYLOAD_SIZE: usize = 8;
+
 const HID_GET_REPORT: u8 = 0x01;
 const HID_SET_REPORT: u8 = 0x09;
 const REPORT_TYPE_FEATURE: u16 = 0x03;
