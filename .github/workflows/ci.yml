@@ -73,3 +73,15 @@ jobs:
           toolchain: stable
       - name: run cargo test
         run: cargo test --all-features
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    container:
+      image: docker.io/xd009642/tarpaulin:0.31.0
+      options: --security-opt seccomp=unconfined
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify code coverage
+        run: |
+          cargo tarpaulin --verbose --timeout 120

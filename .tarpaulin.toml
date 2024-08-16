@@ -1,0 +1,7 @@
+[all]
+all-features = true
+workspace = true
+target-dir = "target/coverage/"
+fail-under = 1
+exclude-files = ["target/*"]
+out = ["Xml", "Html"]
