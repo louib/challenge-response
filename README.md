@@ -99,7 +99,7 @@ fn main() {
 Note, please read about the [initial configuration](https://wiki.archlinux.org/index.php/yubikey#Initial_configuration)
 Alternatively you can configure the yubikey with the official [Yubikey Personalization GUI](https://developers.yubico.com/yubikey-personalization-gui/).
 
-```rust
+```ignore
 extern crate challenge_response;
 extern crate rand;
 
