@@ -7,6 +7,24 @@ on:
       - master
 
 jobs:
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    container:
+      image: docker.io/xd009642/tarpaulin:0.31.0
+      options: --security-opt seccomp=unconfined
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate code coverage
+        run: |
+          cargo tarpaulin --verbose --timeout 120
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: tarpaulin-report
+          path: tarpaulin-report.html
+
   build:
     name: Build the project
     runs-on: ubuntu-latest
