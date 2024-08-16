@@ -83,13 +83,13 @@ impl ChallengeResponse {
         let command = Command::DeviceSerial;
 
         let d = Frame::new(challenge, command); // FixMe: do not need a challange
-        let mut buf = [0; 8];
+        let mut buf = [0; manager::STATUS_UPDATE_PAYLOAD_SIZE];
         manager::wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
 
         manager::write_frame(&mut handle, &d)?;
 
         // Read the response.
-        let mut response = [0; 36];
+        let mut response = [0; manager::RESPONSE_SIZE];
         manager::read_response(&mut handle, &mut response)?;
         manager::close_device(handle, interfaces)?;
 
@@ -204,7 +204,7 @@ impl ChallengeResponse {
 
     pub fn write_config(&mut self, conf: Config, device_config: &mut DeviceModeConfig) -> Result<()> {
         let d = device_config.to_frame(conf.command);
-        let mut buf = [0; 8];
+        let mut buf = [0; manager::STATUS_UPDATE_PAYLOAD_SIZE];
 
         match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
             Ok((mut handle, interfaces)) => {
@@ -229,7 +229,7 @@ impl ChallengeResponse {
                 let command = Command::DeviceSerial;
 
                 let d = Frame::new(challenge, command); // FixMe: do not need a challange
-                let mut buf = [0; 8];
+                let mut buf = [0; manager::STATUS_UPDATE_PAYLOAD_SIZE];
                 manager::wait(
                     &mut handle,
                     |f| !f.contains(manager::Flags::SLOT_WRITE_FLAG),
@@ -239,7 +239,7 @@ impl ChallengeResponse {
                 manager::write_frame(&mut handle, &d)?;
 
                 // Read the response.
-                let mut response = [0; 36];
+                let mut response = [0; manager::RESPONSE_SIZE];
                 manager::read_response(&mut handle, &mut response)?;
                 manager::close_device(handle, interfaces)?;
 
@@ -274,7 +274,7 @@ impl ChallengeResponse {
 
                 (&mut challenge[..chall.len()]).copy_from_slice(chall);
                 let d = Frame::new(challenge, command);
-                let mut buf = [0; 8];
+                let mut buf = [0; manager::STATUS_UPDATE_PAYLOAD_SIZE];
                 manager::wait(
                     &mut handle,
                     |f| !f.contains(manager::Flags::SLOT_WRITE_FLAG),
@@ -284,7 +284,7 @@ impl ChallengeResponse {
                 manager::write_frame(&mut handle, &d)?;
 
                 // Read the response.
-                let mut response = [0; 36];
+                let mut response = [0; manager::RESPONSE_SIZE];
                 manager::read_response(&mut handle, &mut response)?;
                 manager::close_device(handle, interfaces)?;
 
@@ -317,15 +317,17 @@ impl ChallengeResponse {
 
                 (&mut challenge[..chall.len()]).copy_from_slice(chall);
                 let d = Frame::new(challenge, command);
-                let mut buf = [0; 8];
+                let mut buf = [0; manager::STATUS_UPDATE_PAYLOAD_SIZE];
 
-                let mut response = [0; 36];
                 manager::wait(
                     &mut handle,
                     |f| !f.contains(manager::Flags::SLOT_WRITE_FLAG),
                     &mut buf,
                 )?;
+
                 manager::write_frame(&mut handle, &d)?;
+
+                let mut response = [0; manager::RESPONSE_SIZE];
                 manager::read_response(&mut handle, &mut response)?;
                 manager::close_device(handle, interfaces)?;
 
