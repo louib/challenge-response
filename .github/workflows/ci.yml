@@ -64,6 +64,9 @@ jobs:
       - name: Build the project with all the features
         run: cargo build --all-features
 
+      - name: Build the project with nusb support
+        run: cargo build --no-default-features --features nusb
+
       - name: Build the examples
         run: cargo build --examples
 

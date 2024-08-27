@@ -1,3 +1,6 @@
+#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+use nusb::Device;
+#[cfg(feature = "rusb")]
 use rusb::{Context as RUSBContext, DeviceHandle as RUSBDeviceHandle};
 use std::time::Duration;
 use std::{slice, thread};
@@ -6,9 +9,19 @@ use config::Command;
 use error::ChallengeResponseError;
 use sec::crc16;
 
+#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+mod nusb;
+#[cfg(feature = "rusb")]
 mod rusb;
+
+#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+use usb::nusb::{raw_write, read};
+#[cfg(feature = "rusb")]
 use usb::rusb::{raw_write, read};
 
+#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+pub use usb::nusb::{close_device, open_device};
+#[cfg(feature = "rusb")]
 pub use usb::rusb::{close_device, open_device};
 
 /// The size of the payload when writing a request to the usb interface.
@@ -53,9 +66,15 @@ impl Frame {
     }
 }
 
+#[cfg(feature = "rusb")]
 pub type Context = RUSBContext;
+#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+pub type Context = ();
 
+#[cfg(feature = "rusb")]
 pub(crate) type DeviceHandle = RUSBDeviceHandle<Context>;
+#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+pub(crate) type DeviceHandle = Device;
 
 pub fn write_frame(handle: &mut DeviceHandle, frame: &Frame) -> Result<(), ChallengeResponseError> {
     let mut data = unsafe { slice::from_raw_parts(frame as *const Frame as *const u8, 70) };
