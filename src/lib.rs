@@ -206,99 +206,93 @@ impl ChallengeResponse {
         let d = device_config.to_frame(conf.command);
         let mut buf = [0; manager::STATUS_UPDATE_PAYLOAD_SIZE];
 
-        match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
-            Ok((mut handle, interfaces)) => {
-                manager::wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
+        let (mut handle, interfaces) =
+            manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
 
-                // TODO: Should check version number.
+        manager::wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
 
-                manager::write_frame(&mut handle, &d)?;
-                manager::wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
-                manager::close_device(handle, interfaces)?;
+        // TODO: Should check version number.
 
-                Ok(())
-            }
-            Err(error) => Err(error),
-        }
+        manager::write_frame(&mut handle, &d)?;
+        manager::wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
+        manager::close_device(handle, interfaces)?;
+
+        Ok(())
     }
 
     pub fn read_serial_number(&mut self, conf: Config) -> Result<u32> {
-        match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
-            Ok((mut handle, interfaces)) => {
-                let challenge = [0; CHALLENGE_SIZE];
-                let command = Command::DeviceSerial;
+        let (mut handle, interfaces) =
+            manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
 
-                let d = Frame::new(challenge, command); // FixMe: do not need a challange
-                let mut buf = [0; manager::STATUS_UPDATE_PAYLOAD_SIZE];
-                manager::wait(
-                    &mut handle,
-                    |f| !f.contains(manager::Flags::SLOT_WRITE_FLAG),
-                    &mut buf,
-                )?;
+        let challenge = [0; CHALLENGE_SIZE];
+        let command = Command::DeviceSerial;
 
-                manager::write_frame(&mut handle, &d)?;
+        let d = Frame::new(challenge, command); // FixMe: do not need a challange
+        let mut buf = [0; manager::STATUS_UPDATE_PAYLOAD_SIZE];
+        manager::wait(
+            &mut handle,
+            |f| !f.contains(manager::Flags::SLOT_WRITE_FLAG),
+            &mut buf,
+        )?;
 
-                // Read the response.
-                let mut response = [0; manager::RESPONSE_SIZE];
-                manager::read_response(&mut handle, &mut response)?;
-                manager::close_device(handle, interfaces)?;
+        manager::write_frame(&mut handle, &d)?;
 
-                // Check response.
-                if crc16(&response[..6]) != CRC_RESIDUAL_OK {
-                    return Err(ChallengeResponseError::WrongCRC);
-                }
+        // Read the response.
+        let mut response = [0; manager::RESPONSE_SIZE];
+        manager::read_response(&mut handle, &mut response)?;
+        manager::close_device(handle, interfaces)?;
 
-                let serial = structure!("2I").unpack(response[..8].to_vec())?;
-
-                Ok(serial.0)
-            }
-            Err(error) => Err(error),
+        // Check response.
+        if crc16(&response[..6]) != CRC_RESIDUAL_OK {
+            return Err(ChallengeResponseError::WrongCRC);
         }
+
+        let serial = structure!("2I").unpack(response[..8].to_vec())?;
+
+        Ok(serial.0)
     }
 
     pub fn challenge_response_hmac(&mut self, chall: &[u8], conf: Config) -> Result<Hmac> {
         let mut hmac = Hmac([0; 20]);
 
-        match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
-            Ok((mut handle, interfaces)) => {
-                let mut challenge = [0; CHALLENGE_SIZE];
+        let (mut handle, interfaces) =
+            manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
 
-                if conf.variable && chall.last() == Some(&0) {
-                    challenge = [0xff; CHALLENGE_SIZE];
-                }
+        let mut challenge = [0; CHALLENGE_SIZE];
 
-                let mut command = Command::ChallengeHmac1;
-                if let Slot::Slot2 = conf.slot {
-                    command = Command::ChallengeHmac2;
-                }
-
-                (&mut challenge[..chall.len()]).copy_from_slice(chall);
-                let d = Frame::new(challenge, command);
-                let mut buf = [0; manager::STATUS_UPDATE_PAYLOAD_SIZE];
-                manager::wait(
-                    &mut handle,
-                    |f| !f.contains(manager::Flags::SLOT_WRITE_FLAG),
-                    &mut buf,
-                )?;
-
-                manager::write_frame(&mut handle, &d)?;
-
-                // Read the response.
-                let mut response = [0; manager::RESPONSE_SIZE];
-                manager::read_response(&mut handle, &mut response)?;
-                manager::close_device(handle, interfaces)?;
-
-                // Check response.
-                if crc16(&response[..22]) != CRC_RESIDUAL_OK {
-                    return Err(ChallengeResponseError::WrongCRC);
-                }
-
-                hmac.0.clone_from_slice(&response[..20]);
-
-                Ok(hmac)
-            }
-            Err(error) => Err(error),
+        if conf.variable && chall.last() == Some(&0) {
+            challenge = [0xff; CHALLENGE_SIZE];
         }
+
+        let mut command = Command::ChallengeHmac1;
+        if let Slot::Slot2 = conf.slot {
+            command = Command::ChallengeHmac2;
+        }
+
+        (&mut challenge[..chall.len()]).copy_from_slice(chall);
+        let d = Frame::new(challenge, command);
+        let mut buf = [0; manager::STATUS_UPDATE_PAYLOAD_SIZE];
+        manager::wait(
+            &mut handle,
+            |f| !f.contains(manager::Flags::SLOT_WRITE_FLAG),
+            &mut buf,
+        )?;
+
+        manager::write_frame(&mut handle, &d)?;
+
+        // Read the response.
+        let mut response = [0; manager::RESPONSE_SIZE];
+        manager::read_response(&mut handle, &mut response)?;
+        manager::close_device(handle, interfaces)?;
+
+        // Check response.
+        if crc16(&response[..22]) != CRC_RESIDUAL_OK {
+            return Err(ChallengeResponseError::WrongCRC);
+        }
+
+        hmac.0.clone_from_slice(&response[..20]);
+
+        Ok(hmac)
     }
 
     pub fn challenge_response_otp(&mut self, chall: &[u8], conf: Config) -> Result<Aes128Block> {
@@ -306,41 +300,39 @@ impl ChallengeResponse {
             block: GenericArray::clone_from_slice(&[0; 16]),
         };
 
-        match manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id) {
-            Ok((mut handle, interfaces)) => {
-                let mut challenge = [0; CHALLENGE_SIZE];
+        let (mut handle, interfaces) =
+            manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
 
-                let mut command = Command::ChallengeOtp1;
-                if let Slot::Slot2 = conf.slot {
-                    command = Command::ChallengeOtp2;
-                }
+        let mut challenge = [0; CHALLENGE_SIZE];
 
-                (&mut challenge[..chall.len()]).copy_from_slice(chall);
-                let d = Frame::new(challenge, command);
-                let mut buf = [0; manager::STATUS_UPDATE_PAYLOAD_SIZE];
-
-                manager::wait(
-                    &mut handle,
-                    |f| !f.contains(manager::Flags::SLOT_WRITE_FLAG),
-                    &mut buf,
-                )?;
-
-                manager::write_frame(&mut handle, &d)?;
-
-                let mut response = [0; manager::RESPONSE_SIZE];
-                manager::read_response(&mut handle, &mut response)?;
-                manager::close_device(handle, interfaces)?;
-
-                // Check response.
-                if crc16(&response[..18]) != CRC_RESIDUAL_OK {
-                    return Err(ChallengeResponseError::WrongCRC);
-                }
-
-                block.block.copy_from_slice(&response[..16]);
-
-                Ok(block)
-            }
-            Err(error) => Err(error),
+        let mut command = Command::ChallengeOtp1;
+        if let Slot::Slot2 = conf.slot {
+            command = Command::ChallengeOtp2;
         }
+
+        (&mut challenge[..chall.len()]).copy_from_slice(chall);
+        let d = Frame::new(challenge, command);
+        let mut buf = [0; manager::STATUS_UPDATE_PAYLOAD_SIZE];
+
+        manager::wait(
+            &mut handle,
+            |f| !f.contains(manager::Flags::SLOT_WRITE_FLAG),
+            &mut buf,
+        )?;
+
+        manager::write_frame(&mut handle, &d)?;
+
+        let mut response = [0; manager::RESPONSE_SIZE];
+        manager::read_response(&mut handle, &mut response)?;
+        manager::close_device(handle, interfaces)?;
+
+        // Check response.
+        if crc16(&response[..18]) != CRC_RESIDUAL_OK {
+            return Err(ChallengeResponseError::WrongCRC);
+        }
+
+        block.block.copy_from_slice(&response[..16]);
+
+        Ok(block)
     }
 }
