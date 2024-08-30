@@ -1,27 +1,8 @@
-use config::Command;
 use error::ChallengeResponseError;
 use rusb::{request_type, Context, DeviceHandle, Direction, Recipient, RequestType, UsbContext};
-use sec::crc16;
 use std::time::Duration;
 use std::{slice, thread};
-
-/// The size of the payload when writing a request to the usb interface.
-pub(crate) const PAYLOAD_SIZE: usize = 64;
-/// The size of the response after writing a request to the usb interface.
-pub(crate) const RESPONSE_SIZE: usize = 36;
-/// The size of the payload to change the state of the device
-pub(crate) const STATUS_UPDATE_PAYLOAD_SIZE: usize = 8;
-
-const HID_GET_REPORT: u8 = 0x01;
-const HID_SET_REPORT: u8 = 0x09;
-const REPORT_TYPE_FEATURE: u16 = 0x03;
-
-bitflags! {
-    pub struct Flags: u8 {
-        const SLOT_WRITE_FLAG = 0x80;
-        const RESP_PENDING_FLAG = 0x40;
-    }
-}
+use usb::{Flags, Frame, HID_GET_REPORT, HID_SET_REPORT, REPORT_TYPE_FEATURE};
 
 pub fn open_device(
     context: &mut Context,
@@ -197,26 +178,4 @@ pub fn read_response(
     }
     write_reset(handle)?;
     Ok(r0)
-}
-
-#[repr(C)]
-#[repr(packed)]
-pub struct Frame {
-    pub payload: [u8; PAYLOAD_SIZE],
-    command: Command,
-    crc: u16,
-    filler: [u8; 3],
-}
-
-impl Frame {
-    pub fn new(payload: [u8; PAYLOAD_SIZE], command: Command) -> Self {
-        let mut f = Frame {
-            payload,
-            command,
-            crc: 0,
-            filler: [0; 3],
-        };
-        f.crc = crc16(&f.payload).to_le();
-        f
-    }
 }
