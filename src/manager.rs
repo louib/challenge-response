@@ -2,7 +2,7 @@ use error::ChallengeResponseError;
 use rusb::{request_type, Context, DeviceHandle, Direction, Recipient, RequestType, UsbContext};
 use std::time::Duration;
 use std::{slice, thread};
-use usb::{Flags, Frame, HID_GET_REPORT, HID_SET_REPORT, REPORT_TYPE_FEATURE};
+use usb::{Flags, Frame, HID_GET_REPORT, HID_SET_REPORT, REPORT_TYPE_FEATURE, WRITE_RESET_PAYLOAD};
 
 pub fn open_device(
     context: &mut Context,
@@ -142,7 +142,7 @@ pub fn raw_write(handle: &mut DeviceHandle<Context>, packet: &[u8]) -> Result<()
 
 /// Reset the write state after a read.
 pub fn write_reset(handle: &mut DeviceHandle<Context>) -> Result<(), ChallengeResponseError> {
-    raw_write(handle, &[0, 0, 0, 0, 0, 0, 0, 0x8f])?;
+    raw_write(handle, &WRITE_RESET_PAYLOAD)?;
     let mut buf = [0; 8];
     wait(handle, |x| !x.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
     Ok(())
