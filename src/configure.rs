@@ -1,9 +1,9 @@
 use config::Command;
 use hmacmode::HmacKey;
-use manager::Frame;
 use otpmode::Aes128Key;
 use sec::crc16;
 use std;
+use usb::{Frame, PAYLOAD_SIZE};
 
 const FIXED_SIZE: usize = 16;
 const UID_SIZE: usize = 6;
@@ -48,7 +48,7 @@ const SIZEOF_CONFIG: usize = 52;
 impl DeviceModeConfig {
     #[doc(hidden)]
     pub fn to_frame(&mut self, command: Command) -> Frame {
-        let mut payload = [0; crate::manager::PAYLOAD_SIZE];
+        let mut payload = [0; PAYLOAD_SIZE];
         // First set CRC.
         self.crc = {
             let first_fields = unsafe {
