@@ -43,7 +43,7 @@ challenge_response = "0"
 If you are using a YubiKey, you can configure the HMAC-SHA1 Challenge-Response
 with the [Yubikey Personalization GUI](https://developers.yubico.com/yubikey-personalization-gui/).
 
-```rust
+```rust,ignore
 extern crate challenge_response;
 extern crate hex;
 
@@ -99,7 +99,7 @@ fn main() {
 Note, please read about the [initial configuration](https://wiki.archlinux.org/index.php/yubikey#Initial_configuration)
 Alternatively you can configure the yubikey with the official [Yubikey Personalization GUI](https://developers.yubico.com/yubikey-personalization-gui/).
 
-```ignore
+```rust,ignore
 extern crate challenge_response;
 extern crate rand;
 

@@ -338,3 +338,38 @@ impl ChallengeResponse {
         Ok(block)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_find_device() {
+        let mut cr_client = match ChallengeResponse::new() {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("{:?}", e);
+                return;
+            }
+        };
+
+        if let Err(e) = cr_client.find_device() {
+            assert!(matches!(e, ChallengeResponseError::DeviceNotFound));
+        };
+    }
+
+    #[test]
+    fn test_find_all_devices() {
+        let mut cr_client = match ChallengeResponse::new() {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("{:?}", e);
+                return;
+            }
+        };
+
+        if let Err(e) = cr_client.find_all_devices() {
+            assert!(matches!(e, ChallengeResponseError::DeviceNotFound));
+        };
+    }
+}
