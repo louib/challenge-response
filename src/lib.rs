@@ -33,6 +33,8 @@ use rusb::{Context, UsbContext};
 use sec::{crc16, CRC_RESIDUAL_OK};
 use usb::{Flags, Frame};
 
+use manager::{close_device, open_device, read_response, wait, write_frame};
+
 const VENDOR_ID: [u16; 3] = [
     0x1050, // Yubico ( Yubikeys )
     0x1D50, // OpenMoko ( Onlykey )
@@ -78,21 +80,20 @@ impl ChallengeResponse {
     }
 
     fn read_serial_from_device(&mut self, device: rusb::Device<Context>) -> Result<u32> {
-        let (mut handle, interfaces) =
-            manager::open_device(&mut self.context, device.bus_number(), device.address())?;
+        let (mut handle, interfaces) = open_device(&mut self.context, device.bus_number(), device.address())?;
         let challenge = [0; CHALLENGE_SIZE];
         let command = Command::DeviceSerial;
 
         let d = Frame::new(challenge, command); // FixMe: do not need a challange
         let mut buf = [0; usb::STATUS_UPDATE_PAYLOAD_SIZE];
-        manager::wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
+        wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
 
-        manager::write_frame(&mut handle, &d)?;
+        write_frame(&mut handle, &d)?;
 
         // Read the response.
         let mut response = [0; usb::RESPONSE_SIZE];
-        manager::read_response(&mut handle, &mut response)?;
-        manager::close_device(handle, interfaces)?;
+        read_response(&mut handle, &mut response)?;
+        close_device(handle, interfaces)?;
 
         // Check response.
         if crc16(&response[..6]) != crate::sec::CRC_RESIDUAL_OK {
@@ -208,40 +209,40 @@ impl ChallengeResponse {
         let mut buf = [0; usb::STATUS_UPDATE_PAYLOAD_SIZE];
 
         let (mut handle, interfaces) =
-            manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
+            open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
 
-        manager::wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
+        wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
 
         // TODO: Should check version number.
 
-        manager::write_frame(&mut handle, &d)?;
-        manager::wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
-        manager::close_device(handle, interfaces)?;
+        write_frame(&mut handle, &d)?;
+        wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
+        close_device(handle, interfaces)?;
 
         Ok(())
     }
 
     pub fn read_serial_number(&mut self, conf: Config) -> Result<u32> {
         let (mut handle, interfaces) =
-            manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
+            open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
 
         let challenge = [0; CHALLENGE_SIZE];
         let command = Command::DeviceSerial;
 
         let d = Frame::new(challenge, command); // FixMe: do not need a challange
         let mut buf = [0; usb::STATUS_UPDATE_PAYLOAD_SIZE];
-        manager::wait(
+        wait(
             &mut handle,
             |f| !f.contains(usb::Flags::SLOT_WRITE_FLAG),
             &mut buf,
         )?;
 
-        manager::write_frame(&mut handle, &d)?;
+        write_frame(&mut handle, &d)?;
 
         // Read the response.
         let mut response = [0; usb::RESPONSE_SIZE];
-        manager::read_response(&mut handle, &mut response)?;
-        manager::close_device(handle, interfaces)?;
+        read_response(&mut handle, &mut response)?;
+        close_device(handle, interfaces)?;
 
         // Check response.
         if crc16(&response[..6]) != CRC_RESIDUAL_OK {
@@ -257,7 +258,7 @@ impl ChallengeResponse {
         let mut hmac = Hmac([0; 20]);
 
         let (mut handle, interfaces) =
-            manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
+            open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
 
         let mut challenge = [0; CHALLENGE_SIZE];
 
@@ -273,18 +274,18 @@ impl ChallengeResponse {
         (&mut challenge[..chall.len()]).copy_from_slice(chall);
         let d = Frame::new(challenge, command);
         let mut buf = [0; usb::STATUS_UPDATE_PAYLOAD_SIZE];
-        manager::wait(
+        wait(
             &mut handle,
             |f| !f.contains(usb::Flags::SLOT_WRITE_FLAG),
             &mut buf,
         )?;
 
-        manager::write_frame(&mut handle, &d)?;
+        write_frame(&mut handle, &d)?;
 
         // Read the response.
         let mut response = [0; usb::RESPONSE_SIZE];
-        manager::read_response(&mut handle, &mut response)?;
-        manager::close_device(handle, interfaces)?;
+        read_response(&mut handle, &mut response)?;
+        close_device(handle, interfaces)?;
 
         // Check response.
         if crc16(&response[..22]) != CRC_RESIDUAL_OK {
@@ -302,7 +303,7 @@ impl ChallengeResponse {
         };
 
         let (mut handle, interfaces) =
-            manager::open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
+            open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
 
         let mut challenge = [0; CHALLENGE_SIZE];
 
@@ -315,17 +316,17 @@ impl ChallengeResponse {
         let d = Frame::new(challenge, command);
         let mut buf = [0; usb::STATUS_UPDATE_PAYLOAD_SIZE];
 
-        manager::wait(
+        wait(
             &mut handle,
             |f| !f.contains(usb::Flags::SLOT_WRITE_FLAG),
             &mut buf,
         )?;
 
-        manager::write_frame(&mut handle, &d)?;
+        write_frame(&mut handle, &d)?;
 
         let mut response = [0; usb::RESPONSE_SIZE];
-        manager::read_response(&mut handle, &mut response)?;
-        manager::close_device(handle, interfaces)?;
+        read_response(&mut handle, &mut response)?;
+        close_device(handle, interfaces)?;
 
         // Check response.
         if crc16(&response[..18]) != CRC_RESIDUAL_OK {
