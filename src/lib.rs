@@ -16,7 +16,6 @@ pub mod config;
 pub mod configure;
 pub mod error;
 pub mod hmacmode;
-mod manager;
 pub mod otpmode;
 mod sec;
 mod usb;
