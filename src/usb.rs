@@ -4,10 +4,12 @@ use std::{slice, thread};
 
 use config::Command;
 use error::ChallengeResponseError;
-use manager::{raw_write, read};
 use sec::crc16;
 
-pub use manager::{close_device, open_device};
+mod rusb;
+use usb::rusb::{raw_write, read};
+
+pub use usb::rusb::{close_device, open_device};
 
 /// The size of the payload when writing a request to the usb interface.
 pub(crate) const PAYLOAD_SIZE: usize = 64;
