@@ -29,11 +29,9 @@ use configure::DeviceModeConfig;
 use error::ChallengeResponseError;
 use hmacmode::Hmac;
 use otpmode::Aes128Block;
-use rusb::{Context, UsbContext};
+use rusb::UsbContext;
 use sec::{crc16, CRC_RESIDUAL_OK};
-use usb::{Flags, Frame};
-
-use manager::{close_device, open_device, read_response, wait, write_frame};
+use usb::{close_device, open_device, read_response, wait, write_frame, Context, Flags, Frame};
 
 const VENDOR_ID: [u16; 3] = [
     0x1050, // Yubico ( Yubikeys )
