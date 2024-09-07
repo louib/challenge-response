@@ -61,8 +61,8 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Build the project with all the features
-        run: cargo build --all-features
+      - name: Build the project with rusb support
+        run: cargo build --no-default-features --features rusb
 
       - name: Build the project with nusb support
         run: cargo build --no-default-features --features nusb
@@ -81,7 +81,7 @@ jobs:
         with:
           toolchain: stable
       - name: run cargo test
-        run: cargo test --all-features
+        run: cargo test
 
   coverage:
     name: Code Coverage

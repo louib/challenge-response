@@ -33,8 +33,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-      - name: run cargo build
-        run: cargo build --all-features
+
+      - name: Build the project with rusb support
+        run: cargo build
+
+      - name: Build the project with nusb support
+        run: cargo build --no-default-features --features nusb
 
   get-next-version:
     name: Get the next version

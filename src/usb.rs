@@ -1,4 +1,4 @@
-#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+#[cfg(feature = "nusb")]
 use nusb::Device;
 #[cfg(feature = "rusb")]
 use rusb::{Context as RUSBContext, DeviceHandle as RUSBDeviceHandle};
@@ -9,17 +9,17 @@ use config::Command;
 use error::ChallengeResponseError;
 use sec::crc16;
 
-#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+#[cfg(feature = "nusb")]
 mod nusb;
 #[cfg(feature = "rusb")]
 mod rusb;
 
-#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+#[cfg(feature = "nusb")]
 use usb::nusb::{raw_write, read};
 #[cfg(feature = "rusb")]
 use usb::rusb::{raw_write, read};
 
-#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+#[cfg(feature = "nusb")]
 pub use usb::nusb::{close_device, open_device};
 #[cfg(feature = "rusb")]
 pub use usb::rusb::{close_device, open_device};
@@ -68,12 +68,12 @@ impl Frame {
 
 #[cfg(feature = "rusb")]
 pub type Context = RUSBContext;
-#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+#[cfg(feature = "nusb")]
 pub type Context = ();
 
 #[cfg(feature = "rusb")]
 pub(crate) type DeviceHandle = RUSBDeviceHandle<Context>;
-#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+#[cfg(feature = "nusb")]
 pub(crate) type DeviceHandle = Device;
 
 pub fn write_frame(handle: &mut DeviceHandle, frame: &Frame) -> Result<(), ChallengeResponseError> {

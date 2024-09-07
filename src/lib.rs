@@ -2,6 +2,8 @@
 
 #[cfg(not(any(feature = "rusb", feature = "nusb")))]
 compile_error!("Either the rusb or nusb feature must be enabled for this crate");
+#[cfg(all(not(feature = "rusb"), not(feature = "nusb")))]
+compile_error!("Only one of the rusb or nusb features must be enabled for this crate");
 
 #[cfg(feature = "nusb")]
 extern crate nusb;
@@ -84,7 +86,7 @@ impl ChallengeResponse {
         };
         Ok(ChallengeResponse { context })
     }
-    #[cfg(all(feature = "nusb", not(feature = "rusb")))]
+    #[cfg(feature = "nusb")]
     pub fn new() -> Result<Self> {
         Ok(ChallengeResponse { context: () })
     }
@@ -146,7 +148,7 @@ impl ChallengeResponse {
 
         Err(ChallengeResponseError::DeviceNotFound)
     }
-    #[cfg(all(feature = "nusb", not(feature = "rusb")))]
+    #[cfg(feature = "nusb")]
     pub fn find_device(&mut self) -> Result<Device> {
         match self.find_all_devices() {
             Ok(devices) => {
@@ -195,7 +197,7 @@ impl ChallengeResponse {
 
         Err(ChallengeResponseError::DeviceNotFound)
     }
-    #[cfg(all(feature = "nusb", not(feature = "rusb")))]
+    #[cfg(feature = "nusb")]
     pub fn find_device_from_serial(&mut self, serial: u32) -> Result<Device> {
         let nusb_devices = nusb::list_devices()?;
         for device_info in nusb_devices {
@@ -265,7 +267,7 @@ impl ChallengeResponse {
 
         Err(ChallengeResponseError::DeviceNotFound)
     }
-    #[cfg(all(feature = "nusb", not(feature = "rusb")))]
+    #[cfg(feature = "nusb")]
     pub fn find_all_devices(&mut self) -> Result<Vec<Device>> {
         let mut devices: Vec<Device> = Vec::new();
         let nusb_devices = nusb::list_devices()?;
