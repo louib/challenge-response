@@ -31,12 +31,24 @@
 
 ## Usage
 
-Add this to your Cargo.toml
+Add this to your `Cargo.toml`
 
 ```toml
 [dependencies]
 challenge_response = "0"
 ```
+
+### nusb backend (EXPERIMENTAL)
+
+You can enable the experimental [nusb](https://crates.io/crates/nusb) backend by adding the following to your `Cargo.toml` manifest:
+
+```toml
+[dependencies]
+challenge_response = { version = "0", default-features = false, features = ["nusb"] }
+```
+
+The `nusb` backend has the advantage of not depending on `libusb`, thus making it easier to add
+`challenge_response` to your dependencies.
 
 ### Perform a Challenge-Response (HMAC-SHA1 mode)
 

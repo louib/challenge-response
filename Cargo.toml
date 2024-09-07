@@ -20,10 +20,16 @@ include = [
 name = "challenge_response"
 path = "src/lib.rs"
 
+[features]
+rusb = ["dep:rusb"]
+nusb = ["dep:nusb"]
+default = ["rusb"]
+
 [dependencies]
 rand = "0.8"
 bitflags = "2.4"
-rusb = "0.9"
+rusb = { version = "0.9", optional = true }
+nusb = { version = "0.1", optional = true }
 structure = "0.1"
 aes = "0.8"
 block-modes = "0.9"
