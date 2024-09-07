@@ -35,308 +35,80 @@ use configure::DeviceModeConfig;
 use error::ChallengeResponseError;
 use hmacmode::Hmac;
 use otpmode::Aes128Block;
-#[cfg(feature = "rusb")]
-use rusb::UsbContext;
 use sec::{crc16, CRC_RESIDUAL_OK};
-use usb::{close_device, open_device, read_response, wait, write_frame, Context, Flags, Frame};
+use usb::{Backend, BackendType, Flags, Frame, CHALLENGE_SIZE};
 
-const VENDOR_ID: [u16; 3] = [
-    0x1050, // Yubico ( Yubikeys )
-    0x1D50, // OpenMoko ( Onlykey )
-    0x20A0, // Flirc ( Nitrokey )
-];
-const PRODUCT_ID: [u16; 11] = [
-    0x0010, // YubiKey Gen 1 & 2
-    0x0110, 0x0113, 0x0114, 0x0116, // YubiKey NEO
-    0x0401, 0x0403, 0x0405, 0x0407, // Yubikey 4 & 5
-    0x60FC, // Onlykey
-    0x4211, // NitroKey
-];
-
-/// If using a variable-length challenge, the challenge must be stricly smaller than this value.
-/// If using a fixed-length challenge, the challenge must be exactly equal to this value.
-pub const CHALLENGE_SIZE: usize = 64;
+pub use usb::Device;
 
 /// The `Result` type used in this crate.
 type Result<T> = ::std::result::Result<T, ChallengeResponseError>;
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct Device {
-    pub name: Option<String>,
-    pub serial: Option<u32>,
-    pub product_id: u16,
-    pub vendor_id: u16,
-    pub bus_id: u8,
-    pub address_id: u8,
-}
-
 pub struct ChallengeResponse {
-    context: Context,
+    backend: BackendType,
 }
 
 impl ChallengeResponse {
     /// Creates a new ChallengeResponse instance.
-    #[cfg(feature = "rusb")]
     pub fn new() -> Result<Self> {
-        let context = match Context::new() {
-            Ok(c) => c,
-            Err(e) => return Err(ChallengeResponseError::UsbError(e)),
-        };
-        Ok(ChallengeResponse { context })
-    }
-    #[cfg(all(feature = "nusb", not(feature = "rusb")))]
-    pub fn new() -> Result<Self> {
-        Ok(ChallengeResponse { context: () })
+        let backend = BackendType::new()?;
+        Ok(ChallengeResponse { backend })
     }
 
-    #[cfg(feature = "rusb")]
-    fn read_serial_from_device(&mut self, device: rusb::Device<Context>) -> Result<u32> {
-        let (mut handle, interfaces) = open_device(&mut self.context, device.bus_number(), device.address())?;
-        let challenge = [0; CHALLENGE_SIZE];
-        let command = Command::DeviceSerial;
-
-        let d = Frame::new(challenge, command); // FixMe: do not need a challange
-        let mut buf = [0; usb::STATUS_UPDATE_PAYLOAD_SIZE];
-        wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
-
-        write_frame(&mut handle, &d)?;
-
-        // Read the response.
-        let mut response = [0; usb::RESPONSE_SIZE];
-        read_response(&mut handle, &mut response)?;
-        close_device(handle, interfaces)?;
-
-        // Check response.
-        if crc16(&response[..6]) != crate::sec::CRC_RESIDUAL_OK {
-            return Err(ChallengeResponseError::WrongCRC);
-        }
-
-        let serial = structure!("2I").unpack(response[..8].to_vec())?;
-
-        Ok(serial.0)
-    }
-
-    #[cfg(feature = "rusb")]
     pub fn find_device(&mut self) -> Result<Device> {
-        let devices = match self.context.devices() {
-            Ok(d) => d,
-            Err(e) => return Err(ChallengeResponseError::UsbError(e)),
-        };
-        for device in devices.iter() {
-            let descr = device
-                .device_descriptor()
-                .map_err(|e| ChallengeResponseError::UsbError(e))?;
-            if !VENDOR_ID.contains(&descr.vendor_id()) || !PRODUCT_ID.contains(&descr.product_id()) {
-                continue;
-            }
-
-            let name = device.open()?.read_product_string_ascii(&descr).ok();
-            let serial = self.read_serial_from_device(device.clone()).ok();
-            let device = Device {
-                name,
-                serial,
-                product_id: descr.product_id(),
-                vendor_id: descr.vendor_id(),
-                bus_id: device.bus_number(),
-                address_id: device.address(),
-            };
-
-            return Ok(device);
-        }
-
-        Err(ChallengeResponseError::DeviceNotFound)
-    }
-    #[cfg(all(feature = "nusb", not(feature = "rusb")))]
-    pub fn find_device(&mut self) -> Result<Device> {
-        match self.find_all_devices() {
-            Ok(devices) => {
-                if !devices.is_empty() {
-                    Ok(devices[0].clone())
-                } else {
-                    Err(ChallengeResponseError::DeviceNotFound)
-                }
-            }
-            Err(e) => Err(e),
-        }
+        self.backend.find_device()
     }
 
-    #[cfg(feature = "rusb")]
     pub fn find_device_from_serial(&mut self, serial: u32) -> Result<Device> {
-        let devices = match self.context.devices() {
-            Ok(d) => d,
-            Err(e) => return Err(ChallengeResponseError::UsbError(e)),
-        };
-        for device in devices.iter() {
-            let descr = device
-                .device_descriptor()
-                .map_err(|e| ChallengeResponseError::UsbError(e))?;
-            if !VENDOR_ID.contains(&descr.vendor_id()) || !PRODUCT_ID.contains(&descr.product_id()) {
-                continue;
-            }
-
-            let name = device.open()?.read_product_string_ascii(&descr).ok();
-            let fetched_serial = match self.read_serial_from_device(device.clone()).ok() {
-                Some(s) => s,
-                None => 0,
-            };
-            if serial == fetched_serial {
-                let device = Device {
-                    name,
-                    serial: Some(serial),
-                    product_id: descr.product_id(),
-                    vendor_id: descr.vendor_id(),
-                    bus_id: device.bus_number(),
-                    address_id: device.address(),
-                };
-
-                return Ok(device);
-            }
-        }
-
-        Err(ChallengeResponseError::DeviceNotFound)
-    }
-    #[cfg(all(feature = "nusb", not(feature = "rusb")))]
-    pub fn find_device_from_serial(&mut self, serial: u32) -> Result<Device> {
-        let nusb_devices = nusb::list_devices()?;
-        for device_info in nusb_devices {
-            let product_id = device_info.product_id();
-            let vendor_id = device_info.vendor_id();
-
-            if !VENDOR_ID.contains(&vendor_id) || !PRODUCT_ID.contains(&product_id) {
-                continue;
-            }
-
-            let device_serial = match device_info.serial_number() {
-                Some(s) => match s.parse::<u32>() {
-                    Ok(s) => s,
-                    Err(_) => continue,
-                },
-                None => continue,
-            };
-
-            if device_serial == serial {
-                return Ok(Device {
-                    name: match device_info.manufacturer_string() {
-                        Some(name) => Some(name.to_string()),
-                        None => Some("unknown".to_string()),
-                    },
-                    serial: Some(serial),
-                    product_id,
-                    vendor_id,
-                    bus_id: device_info.bus_number(),
-                    address_id: device_info.device_address(),
-                });
-            }
-        }
-        Err(ChallengeResponseError::DeviceNotFound)
+        self.backend.find_device_from_serial(serial)
     }
 
-    #[cfg(feature = "rusb")]
     pub fn find_all_devices(&mut self) -> Result<Vec<Device>> {
-        let mut result: Vec<Device> = Vec::new();
-        let devices = match self.context.devices() {
-            Ok(d) => d,
-            Err(e) => return Err(ChallengeResponseError::UsbError(e)),
-        };
-        for device in devices.iter() {
-            let descr = device
-                .device_descriptor()
-                .map_err(|e| ChallengeResponseError::UsbError(e))?;
-            if !VENDOR_ID.contains(&descr.vendor_id()) || !PRODUCT_ID.contains(&descr.product_id()) {
-                continue;
-            }
-
-            let name = device.open()?.read_product_string_ascii(&descr).ok();
-            let serial = self.read_serial_from_device(device.clone()).ok();
-            let device = Device {
-                name,
-                serial,
-                product_id: descr.product_id(),
-                vendor_id: descr.vendor_id(),
-                bus_id: device.bus_number(),
-                address_id: device.address(),
-            };
-            result.push(device);
-        }
-
-        if !result.is_empty() {
-            return Ok(result);
-        }
-
-        Err(ChallengeResponseError::DeviceNotFound)
-    }
-    #[cfg(all(feature = "nusb", not(feature = "rusb")))]
-    pub fn find_all_devices(&mut self) -> Result<Vec<Device>> {
-        let mut devices: Vec<Device> = Vec::new();
-        let nusb_devices = nusb::list_devices()?;
-        for device_info in nusb_devices {
-            let product_id = device_info.product_id();
-            let vendor_id = device_info.vendor_id();
-
-            if !VENDOR_ID.contains(&vendor_id) || !PRODUCT_ID.contains(&product_id) {
-                continue;
-            }
-
-            devices.push(Device {
-                name: match device_info.manufacturer_string() {
-                    Some(name) => Some(name.to_string()),
-                    None => Some("unknown".to_string()),
-                },
-                serial: match device_info.serial_number() {
-                    Some(serial) => match serial.parse::<u32>() {
-                        Ok(s) => Some(s),
-                        Err(_) => None,
-                    },
-                    None => None,
-                },
-                product_id,
-                vendor_id,
-                bus_id: device_info.bus_number(),
-                address_id: device_info.device_address(),
-            });
-        }
-        Ok(devices)
+        self.backend.find_all_devices()
     }
 
     pub fn write_config(&mut self, conf: Config, device_config: &mut DeviceModeConfig) -> Result<()> {
         let d = device_config.to_frame(conf.command);
         let mut buf = [0; usb::STATUS_UPDATE_PAYLOAD_SIZE];
 
-        let (mut handle, interfaces) =
-            open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
+        let (mut handle, interfaces) = self
+            .backend
+            .open_device(conf.device.bus_id, conf.device.address_id)?;
 
-        wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
+        self.backend
+            .wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
 
         // TODO: Should check version number.
 
-        write_frame(&mut handle, &d)?;
-        wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
-        close_device(handle, interfaces)?;
+        self.backend.write_frame(&mut handle, &d)?;
+        self.backend
+            .wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
+        self.backend.close_device(handle, interfaces)?;
 
         Ok(())
     }
 
     pub fn read_serial_number(&mut self, conf: Config) -> Result<u32> {
-        let (mut handle, interfaces) =
-            open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
+        let (mut handle, interfaces) = self
+            .backend
+            .open_device(conf.device.bus_id, conf.device.address_id)?;
 
         let challenge = [0; CHALLENGE_SIZE];
         let command = Command::DeviceSerial;
 
         let d = Frame::new(challenge, command); // FixMe: do not need a challange
         let mut buf = [0; usb::STATUS_UPDATE_PAYLOAD_SIZE];
-        wait(
+        self.backend.wait(
             &mut handle,
             |f| !f.contains(usb::Flags::SLOT_WRITE_FLAG),
             &mut buf,
         )?;
 
-        write_frame(&mut handle, &d)?;
+        self.backend.write_frame(&mut handle, &d)?;
 
         // Read the response.
         let mut response = [0; usb::RESPONSE_SIZE];
-        read_response(&mut handle, &mut response)?;
-        close_device(handle, interfaces)?;
+        self.backend.read_response(&mut handle, &mut response)?;
+        self.backend.close_device(handle, interfaces)?;
 
         // Check response.
         if crc16(&response[..6]) != CRC_RESIDUAL_OK {
@@ -351,8 +123,9 @@ impl ChallengeResponse {
     pub fn challenge_response_hmac(&mut self, chall: &[u8], conf: Config) -> Result<Hmac> {
         let mut hmac = Hmac([0; 20]);
 
-        let (mut handle, interfaces) =
-            open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
+        let (mut handle, interfaces) = self
+            .backend
+            .open_device(conf.device.bus_id, conf.device.address_id)?;
 
         let mut challenge = [0; CHALLENGE_SIZE];
 
@@ -368,18 +141,18 @@ impl ChallengeResponse {
         (&mut challenge[..chall.len()]).copy_from_slice(chall);
         let d = Frame::new(challenge, command);
         let mut buf = [0; usb::STATUS_UPDATE_PAYLOAD_SIZE];
-        wait(
+        self.backend.wait(
             &mut handle,
             |f| !f.contains(usb::Flags::SLOT_WRITE_FLAG),
             &mut buf,
         )?;
 
-        write_frame(&mut handle, &d)?;
+        self.backend.write_frame(&mut handle, &d)?;
 
         // Read the response.
         let mut response = [0; usb::RESPONSE_SIZE];
-        read_response(&mut handle, &mut response)?;
-        close_device(handle, interfaces)?;
+        self.backend.read_response(&mut handle, &mut response)?;
+        self.backend.close_device(handle, interfaces)?;
 
         // Check response.
         if crc16(&response[..22]) != CRC_RESIDUAL_OK {
@@ -396,8 +169,9 @@ impl ChallengeResponse {
             block: GenericArray::clone_from_slice(&[0; 16]),
         };
 
-        let (mut handle, interfaces) =
-            open_device(&mut self.context, conf.device.bus_id, conf.device.address_id)?;
+        let (mut handle, interfaces) = self
+            .backend
+            .open_device(conf.device.bus_id, conf.device.address_id)?;
 
         let mut challenge = [0; CHALLENGE_SIZE];
 
@@ -410,17 +184,17 @@ impl ChallengeResponse {
         let d = Frame::new(challenge, command);
         let mut buf = [0; usb::STATUS_UPDATE_PAYLOAD_SIZE];
 
-        wait(
+        self.backend.wait(
             &mut handle,
             |f| !f.contains(usb::Flags::SLOT_WRITE_FLAG),
             &mut buf,
         )?;
 
-        write_frame(&mut handle, &d)?;
+        self.backend.write_frame(&mut handle, &d)?;
 
         let mut response = [0; usb::RESPONSE_SIZE];
-        read_response(&mut handle, &mut response)?;
-        close_device(handle, interfaces)?;
+        self.backend.read_response(&mut handle, &mut response)?;
+        self.backend.close_device(handle, interfaces)?;
 
         // Check response.
         if crc16(&response[..18]) != CRC_RESIDUAL_OK {
