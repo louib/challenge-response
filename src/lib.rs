@@ -66,6 +66,11 @@ impl ChallengeResponse {
         self.backend.find_all_devices()
     }
 
+    pub fn read_serial_number(&mut self, conf: Config) -> Result<u32> {
+        self.backend
+            .read_serial_from_device(conf.device.bus_id, conf.device.address_id)
+    }
+
     pub fn write_config(&mut self, conf: Config, device_config: &mut DeviceModeConfig) -> Result<()> {
         let d = device_config.to_frame(conf.command);
         let mut buf = [0; usb::STATUS_UPDATE_PAYLOAD_SIZE];
@@ -85,39 +90,6 @@ impl ChallengeResponse {
         self.backend.close_device(handle, interfaces)?;
 
         Ok(())
-    }
-
-    pub fn read_serial_number(&mut self, conf: Config) -> Result<u32> {
-        let (mut handle, interfaces) = self
-            .backend
-            .open_device(conf.device.bus_id, conf.device.address_id)?;
-
-        let challenge = [0; CHALLENGE_SIZE];
-        let command = Command::DeviceSerial;
-
-        let d = Frame::new(challenge, command); // FixMe: do not need a challange
-        let mut buf = [0; usb::STATUS_UPDATE_PAYLOAD_SIZE];
-        self.backend.wait(
-            &mut handle,
-            |f| !f.contains(usb::Flags::SLOT_WRITE_FLAG),
-            &mut buf,
-        )?;
-
-        self.backend.write_frame(&mut handle, &d)?;
-
-        // Read the response.
-        let mut response = [0; usb::RESPONSE_SIZE];
-        self.backend.read_response(&mut handle, &mut response)?;
-        self.backend.close_device(handle, interfaces)?;
-
-        // Check response.
-        if crc16(&response[..6]) != CRC_RESIDUAL_OK {
-            return Err(ChallengeResponseError::WrongCRC);
-        }
-
-        let serial = structure!("2I").unpack(response[..8].to_vec())?;
-
-        Ok(serial.0)
     }
 
     pub fn challenge_response_hmac(&mut self, chall: &[u8], conf: Config) -> Result<Hmac> {

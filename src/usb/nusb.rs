@@ -118,13 +118,11 @@ impl Backend<NUSBDevice, Interface> for NUSBBackend {
                 continue;
             }
 
-            let device_serial = match device_info.serial_number() {
-                Some(s) => match s.parse::<u32>() {
+            let device_serial =
+                match self.read_serial_from_device(device_info.bus_number(), device_info.device_address()) {
                     Ok(s) => s,
                     Err(_) => continue,
-                },
-                None => continue,
-            };
+                };
 
             if device_serial == serial {
                 return Ok(Device {
@@ -154,18 +152,16 @@ impl Backend<NUSBDevice, Interface> for NUSBBackend {
                 continue;
             }
 
+            let device_serial = self
+                .read_serial_from_device(device_info.bus_number(), device_info.device_address())
+                .ok();
+
             devices.push(Device {
                 name: match device_info.manufacturer_string() {
                     Some(name) => Some(name.to_string()),
                     None => Some("unknown".to_string()),
                 },
-                serial: match device_info.serial_number() {
-                    Some(serial) => match serial.parse::<u32>() {
-                        Ok(s) => Some(s),
-                        Err(_) => None,
-                    },
-                    None => None,
-                },
+                serial: device_serial,
                 product_id,
                 vendor_id,
                 bus_id: device_info.bus_number(),
