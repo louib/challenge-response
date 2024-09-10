@@ -190,4 +190,34 @@ pub trait Backend<DeviceHandle, Interface> {
         self.write_reset(handle)?;
         Ok(r0)
     }
+
+    fn read_serial_from_device(
+        &mut self,
+        device_bus_id: u8,
+        device_address: u8,
+    ) -> Result<u32, ChallengeResponseError> {
+        let (mut handle, interfaces) = self.open_device(device_bus_id, device_address)?;
+        let challenge = [0; CHALLENGE_SIZE];
+        let command = Command::DeviceSerial;
+
+        let d = Frame::new(challenge, command); // FIXME: do not need a challange
+        let mut buf = [0; STATUS_UPDATE_PAYLOAD_SIZE];
+        self.wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
+
+        self.write_frame(&mut handle, &d)?;
+
+        // Read the response.
+        let mut response = [0; RESPONSE_SIZE];
+        self.read_response(&mut handle, &mut response)?;
+        self.close_device(handle, interfaces)?;
+
+        // Check response.
+        if crc16(&response[..6]) != crate::sec::CRC_RESIDUAL_OK {
+            return Err(ChallengeResponseError::WrongCRC);
+        }
+
+        let serial = structure!("2I").unpack(response[..8].to_vec())?;
+
+        Ok(serial.0)
+    }
 }

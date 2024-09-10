@@ -1,13 +1,7 @@
 use error::ChallengeResponseError;
-use rusb::{
-    request_type, Context, Device as RUSBDevice, DeviceHandle, Direction, Recipient, RequestType, UsbContext,
-};
-use sec::crc16;
+use rusb::{request_type, Context, DeviceHandle, Direction, Recipient, RequestType, UsbContext};
 use std::time::Duration;
-use usb::{
-    Backend, Command, Device, Flags, Frame, CHALLENGE_SIZE, HID_GET_REPORT, HID_SET_REPORT, PRODUCT_ID,
-    REPORT_TYPE_FEATURE, RESPONSE_SIZE, STATUS_UPDATE_PAYLOAD_SIZE, VENDOR_ID,
-};
+use usb::{Backend, Device, HID_GET_REPORT, HID_SET_REPORT, PRODUCT_ID, REPORT_TYPE_FEATURE, VENDOR_ID};
 
 pub struct RUSBBackend {
     context: Context,
@@ -144,7 +138,9 @@ impl Backend<DeviceHandle<Context>, u8> for RUSBBackend {
             }
 
             let name = device.open()?.read_product_string_ascii(&descr).ok();
-            let serial = self.read_serial_from_device(device.clone()).ok();
+            let serial = self
+                .read_serial_from_device(device.bus_number(), device.address())
+                .ok();
             let device = Device {
                 name,
                 serial,
@@ -174,7 +170,10 @@ impl Backend<DeviceHandle<Context>, u8> for RUSBBackend {
             }
 
             let name = device.open()?.read_product_string_ascii(&descr).ok();
-            let fetched_serial = match self.read_serial_from_device(device.clone()).ok() {
+            let fetched_serial = match self
+                .read_serial_from_device(device.bus_number(), device.address())
+                .ok()
+            {
                 Some(s) => s,
                 None => 0,
             };
@@ -210,7 +209,9 @@ impl Backend<DeviceHandle<Context>, u8> for RUSBBackend {
             }
 
             let name = device.open()?.read_product_string_ascii(&descr).ok();
-            let serial = self.read_serial_from_device(device.clone()).ok();
+            let serial = self
+                .read_serial_from_device(device.bus_number(), device.address())
+                .ok();
             let device = Device {
                 name,
                 serial,
@@ -227,33 +228,5 @@ impl Backend<DeviceHandle<Context>, u8> for RUSBBackend {
         }
 
         Err(ChallengeResponseError::DeviceNotFound)
-    }
-}
-
-impl RUSBBackend {
-    fn read_serial_from_device(&mut self, device: RUSBDevice<Context>) -> Result<u32, ChallengeResponseError> {
-        let (mut handle, interfaces) = self.open_device(device.bus_number(), device.address())?;
-        let challenge = [0; CHALLENGE_SIZE];
-        let command = Command::DeviceSerial;
-
-        let d = Frame::new(challenge, command); // FixMe: do not need a challange
-        let mut buf = [0; STATUS_UPDATE_PAYLOAD_SIZE];
-        self.wait(&mut handle, |f| !f.contains(Flags::SLOT_WRITE_FLAG), &mut buf)?;
-
-        self.write_frame(&mut handle, &d)?;
-
-        // Read the response.
-        let mut response = [0; RESPONSE_SIZE];
-        self.read_response(&mut handle, &mut response)?;
-        self.close_device(handle, interfaces)?;
-
-        // Check response.
-        if crc16(&response[..6]) != crate::sec::CRC_RESIDUAL_OK {
-            return Err(ChallengeResponseError::WrongCRC);
-        }
-
-        let serial = structure!("2I").unpack(response[..8].to_vec())?;
-
-        Ok(serial.0)
     }
 }
