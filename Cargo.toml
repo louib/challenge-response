@@ -3,9 +3,9 @@ name = "challenge_response"
 version = "0.0.0-placeholder-version"
 authors = ["Ashutosh Varma <github@ashu.io>", "louib <code@louib.net>"]
 
-description = "Challenge-Response library for Rust"
+description = "Perform HMAC-SHA1 and OTP challenges with YubiKey, OnlyKey and NitroKey, in pure Rust."
 license = "MIT OR Apache-2.0"
-keywords = ["yubikey", "authentication", "encryption", "configuration", "Challenge-Response"]
+keywords = ["yubikey", "authentication", "encryption", "configuration", "challenge-response"]
 categories = ["authentication"]
 repository = "https://github.com/louib/challenge-response"
 readme = "README.md"
