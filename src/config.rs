@@ -86,6 +86,8 @@ pub enum Command {
     ChallengeOtp2 = 0x28,
     ChallengeHmac1 = 0x30,
     ChallengeHmac2 = 0x38,
+    ReadConfig1 = 0x1c,
+    ReadConfig2 = 0x1d,
 }
 
 #[derive(Clone, Debug, PartialEq)]

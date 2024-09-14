@@ -15,7 +15,7 @@ fn main() {
 
         let config = Config::new_from(device).set_slot(Slot::Slot2);
 
-        match challenge_response.read_serial_number(config) {
+        match challenge_response.read_serial_number(config.clone()) {
             Ok(serial_number) => {
                 println!("Serial Number {}", serial_number);
             }
@@ -23,6 +23,8 @@ fn main() {
                 println!("{}", error);
             }
         };
+
+        challenge_response.read_config(config).unwrap();
     } else {
         println!("Device not found");
     }

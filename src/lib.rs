@@ -92,6 +92,40 @@ impl ChallengeResponse {
         Ok(())
     }
 
+    pub fn read_config(&mut self, conf: Config) -> Result<bool> {
+        let (mut handle, interfaces) = self
+            .backend
+            .open_device(conf.device.bus_id, conf.device.address_id)?;
+
+        let command = match conf.slot {
+            Slot::Slot1 => Command::ReadConfig1,
+            Slot::Slot2 => Command::ReadConfig2,
+        };
+
+        let d = Frame::new([0; CHALLENGE_SIZE], command);
+        let mut buf = [0; usb::STATUS_UPDATE_PAYLOAD_SIZE];
+        self.backend.wait(
+            &mut handle,
+            |f| !f.contains(usb::Flags::SLOT_WRITE_FLAG),
+            &mut buf,
+        )?;
+
+        self.backend.write_frame(&mut handle, &d)?;
+
+        let mut response = [0; usb::RESPONSE_SIZE];
+        self.backend.read_response(&mut handle, &mut response)?;
+        self.backend.close_device(handle, interfaces)?;
+
+        if crc16(&response[..22]) != CRC_RESIDUAL_OK {
+            return Err(ChallengeResponseError::WrongCRC);
+        }
+
+        println!("{:?}", response);
+        println!("response length {:?}", response.len());
+
+        Ok(true)
+    }
+
     pub fn challenge_response_hmac(&mut self, chall: &[u8], conf: Config) -> Result<Hmac> {
         let mut hmac = Hmac([0; 20]);
 
