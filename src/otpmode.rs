@@ -46,7 +46,7 @@ impl Aes128Key {
     pub fn generate<R: Rng>(mut rng: R) -> Self {
         let mut key = Aes128Key([0; 16]);
         for i in key.0.iter_mut() {
-            *i = rng.gen()
+            *i = rng.random()
         }
         key
     }

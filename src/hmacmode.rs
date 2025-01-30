@@ -53,7 +53,7 @@ impl HmacKey {
     pub fn generate<R: Rng>(mut rng: R) -> Self {
         let mut key = HmacKey([0; HMAC_SECRET_SIZE]);
         for i in key.0.iter_mut() {
-            *i = rng.gen()
+            *i = rng.random()
         }
         key
     }
