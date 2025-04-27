@@ -5,8 +5,8 @@ use challenge_response::config::{Command, Config};
 use challenge_response::configure::DeviceModeConfig;
 use challenge_response::hmacmode::HmacKey;
 use challenge_response::ChallengeResponse;
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
+use rand::distr::Alphanumeric;
+use rand::{rng, Rng};
 
 fn main() {
     let mut challenge_response = ChallengeResponse::new().unwrap();
@@ -19,7 +19,7 @@ fn main() {
 
         let config = Config::new_from(device).set_command(Command::Configuration2);
 
-        let rng = thread_rng();
+        let rng = rng();
 
         let require_press_button = false;
 

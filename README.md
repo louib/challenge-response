@@ -121,8 +121,8 @@ use challenge_response::hmacmode::{
     HmacKey, HmacSecret, HMAC_SECRET_SIZE,
 };
 use challenge_response::ChallengeResponse;
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
+use rand::distr::Alphanumeric;
+use rand::{rng, Rng};
 
 fn main() {
     let mut cr_client = match ChallengeResponse::new() {
@@ -149,7 +149,7 @@ fn main() {
     let config = Config::new_from(device)
         .set_command(Command::Configuration2);
 
-    let mut rng = thread_rng();
+    let mut rng = rng();
 
     // Used rand here, but you can set your own secret:
     // let secret: &HmacSecret = b"my_awesome_secret_20";
