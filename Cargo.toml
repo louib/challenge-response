@@ -28,13 +28,18 @@ default = ["rusb"]
 [dependencies]
 rand = "0.9"
 bitflags = "2.4"
-rusb = { version = "0.9", optional = true }
-nusb = { version = "0.1", optional = true }
 structure = "0.1"
 aes = "0.8"
 block-modes = "0.9"
 hmac = "0.12"
 sha-1 = "0.10"
+
+[target.'cfg(windows)'.dependencies]
+rusb = { version = "0.9" }
+
+[target.'cfg(not(windows))'.dependencies]
+rusb = { version = "0.9", optional = true }
+nusb = { version = "0.1", optional = true }
 
 [dev-dependencies]
 hex = "0.4"

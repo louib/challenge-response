@@ -50,6 +50,9 @@ challenge_response = { version = "0", default-features = false, features = ["nus
 The `nusb` backend has the advantage of not depending on `libusb`, thus making it easier to add
 `challenge_response` to your dependencies.
 
+> [!NOTE]
+> The `nusb` feature is not available on Windows. If configured, the library will default to using the `rusb` backend instead.
+
 ### Perform a Challenge-Response (HMAC-SHA1 mode)
 
 If you are using a YubiKey, you can configure the HMAC-SHA1 Challenge-Response

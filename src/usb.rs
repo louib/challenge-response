@@ -5,9 +5,9 @@ use config::Command;
 use error::ChallengeResponseError;
 use sec::crc16;
 
-#[cfg(feature = "rusb")]
+#[cfg(any(feature = "rusb", target_os = "windows"))]
 pub type BackendType = rusb::RUSBBackend;
-#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+#[cfg(all(feature = "nusb", not(feature = "rusb"), not(target_os = "windows")))]
 pub type BackendType = nusb::NUSBBackend;
 
 /// If using a variable-length challenge, the challenge must be stricly smaller than this value.
@@ -27,9 +27,9 @@ const PRODUCT_ID: [u16; 11] = [
     0x4211, // NitroKey
 ];
 
-#[cfg(all(feature = "nusb", not(feature = "rusb")))]
+#[cfg(all(feature = "nusb", not(feature = "rusb"), not(target_os = "windows")))]
 pub mod nusb;
-#[cfg(feature = "rusb")]
+#[cfg(any(feature = "rusb", target_os = "windows"))]
 pub mod rusb;
 
 /// The size of the payload when writing a request to the usb interface.

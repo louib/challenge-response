@@ -1,4 +1,4 @@
-#[cfg(feature = "rusb")]
+#[cfg(any(feature = "rusb", target_os = "windows"))]
 use rusb::Error as usbError;
 use std::error;
 use std::fmt;
@@ -7,7 +7,7 @@ use std::io::Error as ioError;
 #[derive(Debug)]
 pub enum ChallengeResponseError {
     IOError(ioError),
-    #[cfg(feature = "rusb")]
+    #[cfg(any(feature = "rusb", target_os = "windows"))]
     UsbError(usbError),
     CommandNotSupported,
     DeviceNotFound,
@@ -23,7 +23,7 @@ impl fmt::Display for ChallengeResponseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             ChallengeResponseError::IOError(ref err) => write!(f, "IO error: {}", err),
-            #[cfg(feature = "rusb")]
+            #[cfg(any(feature = "rusb", target_os = "windows"))]
             ChallengeResponseError::UsbError(ref err) => write!(f, "USB  error: {}", err),
             ChallengeResponseError::DeviceNotFound => write!(f, "Device not found"),
             ChallengeResponseError::OpenDeviceError => write!(f, "Can not open device"),
@@ -40,7 +40,7 @@ impl fmt::Display for ChallengeResponseError {
 impl error::Error for ChallengeResponseError {
     fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
-            #[cfg(feature = "rusb")]
+            #[cfg(any(feature = "rusb", target_os = "windows"))]
             ChallengeResponseError::UsbError(ref err) => Some(err),
             _ => None,
         }
@@ -53,7 +53,7 @@ impl From<ioError> for ChallengeResponseError {
     }
 }
 
-#[cfg(feature = "rusb")]
+#[cfg(any(feature = "rusb", target_os = "windows"))]
 impl From<usbError> for ChallengeResponseError {
     fn from(err: usbError) -> ChallengeResponseError {
         ChallengeResponseError::UsbError(err)
