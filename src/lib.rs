@@ -3,9 +3,9 @@
 #[cfg(not(any(feature = "rusb", feature = "nusb")))]
 compile_error!("Either the rusb or nusb feature must be enabled for this crate");
 
-#[cfg(feature = "nusb")]
+#[cfg(all(feature = "nusb", not(feature = "rusb"), not(target_os = "windows")))]
 extern crate nusb;
-#[cfg(feature = "rusb")]
+#[cfg(any(feature = "rusb", target_os = "windows"))]
 extern crate rusb;
 
 #[macro_use]

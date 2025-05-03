@@ -80,8 +80,8 @@ impl Backend<DeviceHandle<Context>, u8> for RUSBBackend {
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     fn close_device(
         &self,
-        mut handle: DeviceHandle<Context>,
-        interfaces: Vec<u8>,
+        _handle: DeviceHandle<Context>,
+        _interfaces: Vec<u8>,
     ) -> Result<(), ChallengeResponseError> {
         Ok(())
     }
