@@ -2,6 +2,7 @@
 name = "challenge_response"
 version = "0.0.0-placeholder-version"
 authors = ["Ashutosh Varma <github@ashu.io>", "louib <code@louib.net>"]
+edition = "2021"
 
 description = "Perform HMAC-SHA1 and OTP challenges with YubiKey, OnlyKey and NitroKey, in pure Rust."
 license = "MIT OR Apache-2.0"

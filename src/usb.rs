@@ -1,9 +1,9 @@
 use std::time::Duration;
 use std::{slice, thread};
 
-use config::Command;
-use error::ChallengeResponseError;
-use sec::crc16;
+use crate::config::Command;
+use crate::error::ChallengeResponseError;
+use crate::sec::crc16;
 
 #[cfg(any(feature = "rusb", target_os = "windows"))]
 pub type BackendType = rusb::RUSBBackend;

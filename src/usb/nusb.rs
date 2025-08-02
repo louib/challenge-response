@@ -1,8 +1,9 @@
+use std::time::Duration;
+
 use nusb::{Device as NUSBDevice, Interface};
 
-use error::ChallengeResponseError;
-use std::time::Duration;
-use usb::{Backend, Device, HID_GET_REPORT, HID_SET_REPORT, PRODUCT_ID, REPORT_TYPE_FEATURE, VENDOR_ID};
+use crate::error::ChallengeResponseError;
+use crate::usb::{Backend, Device, HID_GET_REPORT, HID_SET_REPORT, PRODUCT_ID, REPORT_TYPE_FEATURE, VENDOR_ID};
 
 pub struct NUSBBackend {}
 
