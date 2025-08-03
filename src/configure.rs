@@ -1,9 +1,10 @@
-use config::Command;
-use hmacmode::HmacKey;
-use otpmode::Aes128Key;
-use sec::crc16;
 use std;
-use usb::{Frame, PAYLOAD_SIZE};
+
+use crate::config::Command;
+use crate::hmacmode::HmacKey;
+use crate::otpmode::Aes128Key;
+use crate::sec::crc16;
+use crate::usb::{Frame, PAYLOAD_SIZE};
 
 const FIXED_SIZE: usize = 16;
 const UID_SIZE: usize = 6;

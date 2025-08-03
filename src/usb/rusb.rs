@@ -1,7 +1,8 @@
-use error::ChallengeResponseError;
+use crate::error::ChallengeResponseError;
+use crate::usb::{Backend, Device, HID_GET_REPORT, HID_SET_REPORT, PRODUCT_ID, REPORT_TYPE_FEATURE, VENDOR_ID};
+
 use rusb::{request_type, Context, DeviceHandle, Direction, Recipient, RequestType, UsbContext};
 use std::time::Duration;
-use usb::{Backend, Device, HID_GET_REPORT, HID_SET_REPORT, PRODUCT_ID, REPORT_TYPE_FEATURE, VENDOR_ID};
 
 pub struct RUSBBackend {
     context: Context,
