@@ -61,6 +61,16 @@ pub struct Frame {
     filler: [u8; 3],
 }
 
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct Status {
+    pub version_major: u8,
+    pub version_minor: u8,
+    pub version_build: u8,
+    pub pgm_seq: u8,
+    pub touch_level: u16,
+}
+
 impl Frame {
     pub fn new(payload: [u8; PAYLOAD_SIZE], command: Command) -> Self {
         let mut f = Frame {
