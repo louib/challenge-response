@@ -13,7 +13,7 @@ jobs:
     name: Lint Commit Messages
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: wagoid/commitlint-github-action@v5
@@ -24,31 +24,22 @@ jobs:
     env:
       RUSTFLAGS: -D warnings
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: nightly
-          components: rustfmt
+      - uses: DeterminateSystems/nix-installer-action@v21
       - name: run cargo doc
-        run: cargo doc
+        run: nix develop --command cargo doc
 
   formatting:
     name: Code Formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          components: rustfmt
-      - name: running rustfmt
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v21
+      - name: Code Formatting
         run: |
-          files=$(find . -name '*.rs')
-          IFS=$'\n'; for file in $files; do
-            rustfmt --check "$file"
-          done
+          nix develop --command cargo fmt --check
 
   build-windows:
     name: Build the project (Windows)
@@ -56,7 +47,7 @@ jobs:
     env:
       RUSTFLAGS: -D warnings
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
@@ -76,19 +67,17 @@ jobs:
     env:
       RUSTFLAGS: -D warnings
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v21
 
       - name: Build the project with all the features
-        run: cargo build --all-features
+        run: nix develop --command cargo build --all-features
 
       - name: Build the project with nusb support
-        run: cargo build --no-default-features --features nusb
+        run: nix develop --command cargo build --no-default-features --features nusb
 
       - name: Build the examples
-        run: cargo build --examples
+        run: nix develop --command cargo build --examples
 
   test:
     name: Test Suite
@@ -96,21 +85,18 @@ jobs:
     env:
       RUSTFLAGS: -D warnings
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v21
       - name: run cargo test
-        run: cargo test --all-features
+        run: nix develop --command cargo test --all-features
 
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
-    container:
-      image: docker.io/xd009642/tarpaulin:0.31.0
-      options: --security-opt seccomp=unconfined
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/nix-installer-action@v21
       - name: Verify code coverage
         run: |
-          cargo tarpaulin --verbose --timeout 120
+          nix develop --command cargo tarpaulin --verbose --timeout 120
+
