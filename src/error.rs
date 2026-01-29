@@ -1,3 +1,5 @@
+#[cfg(all(feature = "nusb", not(target_os = "windows")))]
+use nusb::Error as nusbError;
 #[cfg(any(feature = "rusb", target_os = "windows"))]
 use rusb::Error as usbError;
 use std::error;
@@ -9,6 +11,8 @@ pub enum ChallengeResponseError {
     IOError(ioError),
     #[cfg(any(feature = "rusb", target_os = "windows"))]
     UsbError(usbError),
+    #[cfg(all(feature = "nusb", not(target_os = "windows")))]
+    NusbError(nusbError),
     CommandNotSupported,
     DeviceNotFound,
     OpenDeviceError,
@@ -25,6 +29,8 @@ impl fmt::Display for ChallengeResponseError {
             ChallengeResponseError::IOError(ref err) => write!(f, "IO error: {}", err),
             #[cfg(any(feature = "rusb", target_os = "windows"))]
             ChallengeResponseError::UsbError(ref err) => write!(f, "USB  error: {}", err),
+            #[cfg(all(feature = "nusb", not(target_os = "windows")))]
+            ChallengeResponseError::NusbError(ref err) => write!(f, "NUSB error: {}", err),
             ChallengeResponseError::DeviceNotFound => write!(f, "Device not found"),
             ChallengeResponseError::OpenDeviceError => write!(f, "Can not open device"),
             ChallengeResponseError::CommandNotSupported => write!(f, "Command Not Supported"),
@@ -42,6 +48,8 @@ impl error::Error for ChallengeResponseError {
         match *self {
             #[cfg(any(feature = "rusb", target_os = "windows"))]
             ChallengeResponseError::UsbError(ref err) => Some(err),
+            #[cfg(all(feature = "nusb", not(target_os = "windows")))]
+            ChallengeResponseError::NusbError(ref err) => Some(err),
             _ => None,
         }
     }
@@ -57,5 +65,12 @@ impl From<ioError> for ChallengeResponseError {
 impl From<usbError> for ChallengeResponseError {
     fn from(err: usbError) -> ChallengeResponseError {
         ChallengeResponseError::UsbError(err)
+    }
+}
+
+#[cfg(all(feature = "nusb", not(target_os = "windows")))]
+impl From<nusbError> for ChallengeResponseError {
+    fn from(err: nusbError) -> ChallengeResponseError {
+        ChallengeResponseError::NusbError(err)
     }
 }
