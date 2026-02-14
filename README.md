@@ -125,7 +125,7 @@ use challenge_response::hmacmode::{
 };
 use challenge_response::ChallengeResponse;
 use rand::distr::Alphanumeric;
-use rand::{rng, Rng};
+use rand::{rng, RngExt};
 
 fn main() {
     let mut cr_client = match ChallengeResponse::new() {
