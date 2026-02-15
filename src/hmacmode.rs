@@ -1,7 +1,5 @@
-use std;
-
-use crate::rand::Rng;
 use crate::sec::hmac_sha1;
+use rand::{Rng, RngExt};
 
 /// Size of the secret used by the HMAC algorithm
 pub const HMAC_SECRET_SIZE: usize = 20;

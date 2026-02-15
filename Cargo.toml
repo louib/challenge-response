@@ -27,7 +27,7 @@ nusb = ["dep:nusb"]
 default = ["rusb"]
 
 [dependencies]
-rand = "0.9"
+rand = "0.10"
 bitflags = "2.10"
 structure = "0.1"
 aes = "0.8"

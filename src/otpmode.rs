@@ -4,7 +4,7 @@ use aes::cipher::generic_array::typenum::U16;
 use aes::cipher::generic_array::GenericArray;
 use aes::cipher::{BlockDecrypt, KeyInit};
 use aes::Aes128;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use std;
 
 #[repr(C)]

@@ -6,7 +6,7 @@ use challenge_response::configure::DeviceModeConfig;
 use challenge_response::hmacmode::HmacKey;
 use challenge_response::ChallengeResponse;
 use rand::distr::Alphanumeric;
-use rand::{rng, Rng};
+use rand::{rng, RngExt};
 
 fn main() {
     let mut challenge_response = ChallengeResponse::new().unwrap();
