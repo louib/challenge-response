@@ -17,6 +17,10 @@
 
 `challenge-response` is a Rust library for performing [challenge-response](https://wiki.archlinux.org/index.php/yubikey#Function_and_Application_of_Challenge-Response) operations (hashing and encryption) using security keys like the YubiKey and the OnlyKey.
 
+## Examples
+
+Code examples for performing a challenge-response (both HMAC and OTP) as well as configuring a device can be found in the [examples/](https://github.com/louib/challenge-response/tree/master/examples) directory.
+
 ## Current features
 
 - [HMAC-SHA1 Challenge-Response](https://datatracker.ietf.org/doc/html/rfc2104)
@@ -52,10 +56,6 @@ The `nusb` backend has the advantage of not depending on `libusb`, thus making i
 
 > [!NOTE]
 > The `nusb` feature is not available on Windows. If configured, the library will default to using the `rusb` backend instead.
-
-## Examples
-
-Code examples for performing a challenge-response (both HMAC and OTP) as well as configuring a device can be found in the [examples/](./examples/) directory.
 
 ## Credits
 
