@@ -36,7 +36,7 @@ use error::ChallengeResponseError;
 use hmacmode::Hmac;
 use otpmode::Aes128Block;
 use sec::{crc16, CRC_RESIDUAL_OK};
-use usb::{Backend, BackendType, Flags, Frame, CHALLENGE_SIZE};
+use usb::{Backend, BackendType, Flags, Frame, Status, CHALLENGE_SIZE};
 
 pub use usb::Device;
 
@@ -69,6 +69,43 @@ impl ChallengeResponse {
     pub fn read_serial_number(&mut self, conf: Config) -> Result<u32> {
         self.backend
             .read_serial_from_device(conf.device.bus_id, conf.device.address_id)
+    }
+
+    pub fn read_status(&mut self, conf: Config) -> Result<Status> {
+        let (mut handle, interfaces) = self
+            .backend
+            .open_device(conf.device.bus_id, conf.device.address_id)?;
+
+        // Read the response.
+        let mut response = [0; 8];
+        self.backend.read(&mut handle, &mut response)?;
+        self.backend.close_device(handle, interfaces)?;
+
+        let status = Status {
+            version_major: response[1],
+            version_minor: response[2],
+            version_build: response[3],
+            pgm_seq: response[4],
+            touch_level: u16::from_le_bytes([response[5], response[6]]),
+        };
+
+        Ok(status)
+    }
+
+    pub fn is_configured(&mut self, device: Device, slot: Slot) -> Result<bool> {
+        let conf = Config::new_from(device);
+        let status = self.read_status(conf)?;
+
+        if status.pgm_seq == 0 {
+            return Ok(false);
+        }
+
+        let configured = match slot {
+            Slot::Slot1 => (status.touch_level & 1) != 0,
+            Slot::Slot2 => (status.touch_level & 2) != 0,
+        };
+
+        Ok(configured)
     }
 
     pub fn write_config(&mut self, conf: Config, device_config: &mut DeviceModeConfig) -> Result<()> {
