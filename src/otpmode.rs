@@ -1,8 +1,6 @@
 use crate::error::ChallengeResponseError;
 use crate::sec::{crc16, CRC_RESIDUAL_OK};
-use aes::cipher::generic_array::typenum::U16;
-use aes::cipher::generic_array::GenericArray;
-use aes::cipher::{BlockDecrypt, KeyInit};
+use aes::cipher::{Block, BlockCipherDecrypt, KeyInit};
 use aes::Aes128;
 use rand::{Rng, RngExt};
 use std;
@@ -54,7 +52,7 @@ impl Aes128Key {
 
 #[derive(Debug)]
 pub struct Aes128Block {
-    pub block: GenericArray<u8, U16>,
+    pub block: Block<Aes128>,
 }
 
 impl Drop for Aes128Block {
@@ -78,15 +76,15 @@ impl Aes128Block {
     /// id, and that the `(use_counter, session_counter)` is strictly
     /// larger than the last value seen.
     pub fn check(&self, key: &Aes128Key, challenge: &[u8]) -> Result<Otp, ChallengeResponseError> {
-        let aes_dec = Aes128::new(GenericArray::from_slice(&key.0));
+        let aes_dec = Aes128::new(&key.0.into());
         let mut tmp = Otp::default();
         {
-            let tmp = unsafe { std::slice::from_raw_parts_mut(&mut tmp as *mut Otp as *mut u8, 16) };
-            let mut block_copy = &mut self.block.clone();
+            let tmp_slice = unsafe { std::slice::from_raw_parts_mut(&mut tmp as *mut Otp as *mut u8, 16) };
+            let mut block_copy = self.block.clone();
             aes_dec.decrypt_block(&mut block_copy);
-            tmp.copy_from_slice(block_copy);
+            tmp_slice.copy_from_slice(&block_copy);
 
-            if crc16(&tmp) != CRC_RESIDUAL_OK {
+            if crc16(tmp_slice) != CRC_RESIDUAL_OK {
                 return Err(ChallengeResponseError::WrongCRC);
             }
         }

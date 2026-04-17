@@ -12,7 +12,6 @@ extern crate rusb;
 extern crate structure;
 
 extern crate aes;
-extern crate block_modes;
 extern crate hmac;
 extern crate rand;
 extern crate sha1;
@@ -27,7 +26,8 @@ pub mod otpmode;
 mod sec;
 mod usb;
 
-use aes::cipher::generic_array::GenericArray;
+use aes::cipher::Block;
+use aes::Aes128;
 
 use config::Command;
 use config::{Config, Slot};
@@ -138,7 +138,7 @@ impl ChallengeResponse {
 
     pub fn challenge_response_otp(&mut self, chall: &[u8], conf: Config) -> Result<Aes128Block> {
         let mut block = Aes128Block {
-            block: GenericArray::clone_from_slice(&[0; 16]),
+            block: Block::<Aes128>::from([0; 16]),
         };
 
         let (mut handle, interfaces) = self
